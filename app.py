@@ -15,6 +15,7 @@ import time
 import signal
 import atexit
 import platform
+import requests
 
 # グローバル変数として翻訳サーバープロセスを保持
 server_process = None
@@ -118,13 +119,32 @@ def start_translation_server():
                 text=True
             )
         
-        # サーバーの起動を確認するために少し待機
-        time.sleep(2)
+        # サーバーの起動を確認するために待機
+        print("サーバーの起動を確認しています...")
+        max_retries = 10
+        retry_interval = 1  # 秒
+        server_ready = False
         
-        # プロセスが終了していないか確認
-        if server_process.poll() is not None:
-            print("エラー: 翻訳サーバーの起動に失敗しました")
-            return None
+        for i in range(max_retries):
+            # プロセスが終了していないか確認
+            if server_process.poll() is not None:
+                print("エラー: 翻訳サーバーの起動に失敗しました")
+                return None
+                
+            # サーバーが応答するか確認
+            try:
+                response = requests.get("http://127.0.0.1:11451/docs", timeout=1)
+                if response.status_code == 200:
+                    server_ready = True
+                    break
+            except requests.RequestException:
+                pass
+                
+            print(f"サーバー起動待機中... ({i+1}/{max_retries})")
+            time.sleep(retry_interval)
+            
+        if not server_ready:
+            print("警告: サーバーの応答を確認できませんでしたが、プロセスは実行中です")
         
         print(f"翻訳サーバープロセスが開始されました (PID: {server_process.pid})")
         
