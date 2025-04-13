@@ -1,0 +1,28 @@
+{
+  "hotkeys": {
+    "capture": {
+      "win": false,
+      "alt": true,
+      "shift": true,
+      "key": "x"
+    },
+    "exit": {
+      "win": false,
+      "alt": true,
+      "shift": true,
+      "key": "q"
+    }
+  },
+  "tesseract": {
+    "path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
+  },
+  "ui": {
+    "window_width": 400,
+    "window_height": 500,
+    "always_on_top": true
+  },
+  "ocr": {
+    "languages": "eng+jpn",
+    "psm": 6
+  }
+}
