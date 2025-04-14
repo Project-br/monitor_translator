@@ -8,7 +8,8 @@ a = Analysis(
     binaries=[],
     datas=[
         ('config.json', '.'), 
-        ('translation_logs.json', '.'),
+        # translation_logs.jsonは含めない（初回実行時に自動生成される）
+        # ('translation_logs.json', '.'),
         # Tesseract関連ファイルを含める
         ('C:\\Program Files\\Tesseract-OCR\\tessdata', 'tessdata'),
         # 必要なアイコンやリソースファイル

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-ビルド前にモデルファイルを一時的に移動するスクリプト
+ビルド前にモデルファイルとログファイルを一時的に移動するスクリプト
 """
 
 import os
@@ -10,7 +10,7 @@ import shutil
 import glob
 
 def prepare_model_dir():
-    """モデルディレクトリを準備する"""
+    """モデルディレクトリとログファイルを準備する"""
     # モデルディレクトリのパス
     model_dir = os.path.join(
         "translator_main", 
@@ -59,10 +59,33 @@ def prepare_model_dir():
     
     print(f"README.txtファイルを作成しました: {readme_path}")
     
+    # 翻訳ログファイルの処理
+    handle_translation_logs(temp_dir)
+    
     print("ビルド準備が完了しました")
 
+def handle_translation_logs(temp_dir):
+    """翻訳ログファイルを一時的に移動する"""
+    logs_file = "translation_logs.json"
+    
+    # 翻訳ログファイルが存在するか確認
+    if os.path.exists(logs_file):
+        print(f"翻訳ログファイルが見つかりました: {logs_file}")
+        
+        # 一時保存用ディレクトリを作成（まだ存在しない場合）
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+            print(f"一時保存用ディレクトリを作成しました: {temp_dir}")
+        
+        # ログファイルを一時保存用ディレクトリに移動
+        dest_path = os.path.join(temp_dir, logs_file)
+        shutil.move(logs_file, dest_path)
+        print(f"ログファイルを移動しました: {logs_file} -> {dest_path}")
+    else:
+        print("翻訳ログファイルは見つかりませんでした")
+
 def restore_model_files():
-    """モデルファイルを元に戻す"""
+    """モデルファイルとログファイルを元に戻す"""
     # モデルディレクトリのパス
     model_dir = os.path.join(
         "translator_main", 
@@ -91,7 +114,13 @@ def restore_model_files():
             
             # バックアップファイルをモデルディレクトリに戻す
             for file_path in backup_files:
-                dest_path = os.path.join(model_dir, os.path.basename(file_path))
+                base_name = os.path.basename(file_path)
+                if base_name == "translation_logs.json":
+                    # ログファイルはルートディレクトリに戻す
+                    dest_path = base_name
+                else:
+                    # モデルファイルはモデルディレクトリに戻す
+                    dest_path = os.path.join(model_dir, base_name)
                 shutil.move(file_path, dest_path)
                 print(f"ファイルを戻しました: {file_path} -> {dest_path}")
             

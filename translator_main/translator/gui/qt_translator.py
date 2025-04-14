@@ -865,8 +865,10 @@ class TranslatorWindow(QMainWindow):
         # 設定を保存
         self.save_config()
         
-        # 翻訳ログを保存
+        # 翻訳履歴をクリア
+        self.translation_logs = []
         self.save_translation_logs()
+        print("アプリケーション終了時に翻訳履歴をクリアしました")
         
         # キーボードリスナーを停止
         if hasattr(self, 'kb_listener'):
@@ -976,13 +978,36 @@ class TranslatorWindow(QMainWindow):
     
     def clear_translation_history(self):
         """翻訳履歴をクリア"""
-        reply = QMessageBox.question(
-            self, 
-            "翻訳履歴のクリア", 
-            "すべての翻訳履歴をクリアしますか？\nこの操作は元に戻せません。",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
+        # カスタムスタイルのメッセージボックスを作成
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("翻訳履歴のクリア")
+        msg_box.setText("すべての翻訳履歴をクリアしますか？\nこの操作は元に戻せません。")
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        # より詳細なスタイルシートを適用して文字色を黒に設定
+        msg_box.setStyleSheet("""
+            QMessageBox {
+                background-color: white;
+                color: black;
+            }
+            QMessageBox QLabel {
+                color: black;
+            }
+            QMessageBox QPushButton {
+                background-color: #f0f0f0;
+                color: black;
+                min-width: 80px;
+                border: 1px solid #c0c0c0;
+                border-radius: 3px;
+                padding: 5px;
+            }
+            QMessageBox QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+        """)
+        
+        reply = msg_box.exec_()
         
         if reply == QMessageBox.Yes:
             self.translation_logs = []
