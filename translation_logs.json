@@ -18,5 +18,50 @@
     "timestamp": "2025-04-14 09:15:27",
     "ocr_text": "def main():",
     "translated_text": "メイン():"
+  },
+  {
+    "timestamp": "2025-04-14 09:20:14",
+    "ocr_text": "TESSERACT_PATH=C:\\Program Files\\Tesseract-OCR\\tesseract.exe",
+    "translated_text": "TESSERACT_PATH=C:\\プログラムファイル\\Tesseract-OCR\\tesseract.exe"
+  },
+  {
+    "timestamp": "2025-04-14 09:20:55",
+    "ocr_text": "python .\\test\\cuda_checker.py",
+    "translated_text": "パイソン .\\test\\cuda_checker.py"
+  },
+  {
+    "timestamp": "2025-04-14 09:21:09",
+    "ocr_text": "python app.py",
+    "translated_text": "パイソン app.py"
+  },
+  {
+    "timestamp": "2025-04-14 09:21:50",
+    "ocr_text": "python app.py",
+    "translated_text": "翻訳サーバーに接続できませんでした。サーバーが起動しているか確認してください。"
+  },
+  {
+    "timestamp": "2025-04-14 09:22:16",
+    "ocr_text": "python .\\test\\cuda_checker.py",
+    "translated_text": "パイソン .\\test\\cuda_checker.py"
+  },
+  {
+    "timestamp": "2025-04-14 09:22:31",
+    "ocr_text": "“translator”,",
+    "translated_text": "「翻訳者」、"
+  },
+  {
+    "timestamp": "2025-04-14 09:27:51",
+    "ocr_text": "“translator”,\n“translator.py”",
+    "translated_text": "「翻訳者」、「翻訳者」"
+  },
+  {
+    "timestamp": "2025-04-14 09:29:37",
+    "ocr_text": "“translator”,\n“translator.py”",
+    "translated_text": "「翻訳者」、「翻訳者」"
+  },
+  {
+    "timestamp": "2025-04-14 09:32:53",
+    "ocr_text": "except KeyboardTnterrupt :",
+    "translated_text": "KeyboardTnterruptを除く:"
   }
 ]

@@ -20,9 +20,10 @@ import numpy as np
 import pytesseract
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, 
                             QVBoxLayout, QHBoxLayout, QWidget, QLabel, QPushButton,
-                            QStatusBar, QAction, QMenu, QToolBar, QFileDialog, QMessageBox)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings
-from PyQt5.QtGui import QIcon, QFont, QTextCursor
+                            QStatusBar, QAction, QMenu, QToolBar, QFileDialog, QMessageBox,
+                            QFrame)
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings, QPoint
+from PyQt5.QtGui import QIcon, QFont, QTextCursor, QColor, QPalette, QMouseEvent
 from pynput import keyboard
 import json
 from datetime import datetime
@@ -222,6 +223,142 @@ class ClipboardMonitorThread(QThread):
             return None
 
 
+class CustomTitleBar(QFrame):
+    """カスタムタイトルバー"""
+    
+    def __init__(self, parent=None, hotkey_text=""):
+        super().__init__(parent)
+        self.parent = parent
+        self.setFixedHeight(40)  # タイトルバーの高さ
+        self.setStyleSheet("""
+            CustomTitleBar {
+                background-color: #2c3e50;
+                color: white;
+                border: none;
+            }
+            QPushButton {
+                background-color: #2c3e50;
+                color: white;
+                border: none;
+                padding: 5px;
+            }
+            QPushButton:hover {
+                background-color: #34495e;
+            }
+            QPushButton#close_button:hover {
+                background-color: #e74c3c;
+            }
+            QLabel {
+                color: white;
+            }
+        """)
+        
+        # レイアウト
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(5, 0, 5, 0)
+        
+        # タイトルラベル
+        self.title_label = QLabel("お手軽翻訳ツール")
+        self.title_label.setFont(QFont("Yu Gothic UI", 10, QFont.Bold))
+        self.layout.addWidget(self.title_label)
+        
+        # ホットキー表示
+        if hotkey_text:
+            self.hotkey_label = QLabel(f"[{hotkey_text}]")
+            self.hotkey_label.setFont(QFont("Yu Gothic UI", 8))
+            self.layout.addWidget(self.hotkey_label)
+        
+        # スペーサー
+        self.layout.addStretch()
+        
+        # ファイルボタン
+        self.file_button = QPushButton("F")
+        self.file_button.setToolTip("ファイルメニュー")
+        self.file_button.clicked.connect(self.show_file_menu)
+        self.layout.addWidget(self.file_button)
+        
+        # クリアボタン
+        self.clear_button = QPushButton("C")
+        self.clear_button.setToolTip("テキストをクリア")
+        self.clear_button.clicked.connect(lambda: self.parent.clear_text())
+        self.layout.addWidget(self.clear_button)
+        
+        # 前の翻訳ボタン
+        self.prev_button = QPushButton("←")
+        self.prev_button.setToolTip("前の翻訳")
+        self.prev_button.clicked.connect(lambda: self.parent.show_prev_translation())
+        self.layout.addWidget(self.prev_button)
+        
+        # 次の翻訳ボタン
+        self.next_button = QPushButton("→")
+        self.next_button.setToolTip("次の翻訳")
+        self.next_button.clicked.connect(lambda: self.parent.show_next_translation())
+        self.layout.addWidget(self.next_button)
+        
+        # 閉じるボタン
+        self.close_button = QPushButton("×")
+        self.close_button.setObjectName("close_button")
+        self.close_button.setToolTip("閉じる")
+        self.close_button.clicked.connect(lambda: self.parent.close())
+        self.layout.addWidget(self.close_button)
+        
+        # ドラッグ用の変数
+        self.dragging = False
+        self.drag_position = QPoint()
+        
+    def show_file_menu(self):
+        """ファイルメニューを表示"""
+        menu = QMenu(self)
+        
+        # エクスポートアクション
+        export_action = QAction("テキストをエクスポート", self)
+        export_action.triggered.connect(lambda: self.parent.export_text())
+        menu.addAction(export_action)
+        
+        # 翻訳履歴クリアアクション
+        clear_history_action = QAction("翻訳履歴をクリア", self)
+        clear_history_action.triggered.connect(lambda: self.parent.clear_translation_history())
+        menu.addAction(clear_history_action)
+        
+        # 常に最前面表示アクション
+        topmost_action = QAction("常に最前面に表示", self)
+        topmost_action.setCheckable(True)
+        topmost_action.setChecked(self.parent.is_always_on_top)
+        topmost_action.triggered.connect(lambda checked: self.parent.toggle_always_on_top(checked))
+        menu.addAction(topmost_action)
+        
+        # 終了アクション
+        exit_action = QAction("終了", self)
+        exit_action.triggered.connect(lambda: self.parent.close())
+        menu.addAction(exit_action)
+        
+        # メニューを表示
+        menu.exec_(self.file_button.mapToGlobal(QPoint(0, self.file_button.height())))
+        
+    def update_navigation_buttons(self, prev_enabled, next_enabled):
+        """ナビゲーションボタンの状態を更新"""
+        self.prev_button.setEnabled(prev_enabled)
+        self.next_button.setEnabled(next_enabled)
+        
+    def mousePressEvent(self, event):
+        """マウスプレスイベント（ドラッグ開始）"""
+        if event.button() == Qt.LeftButton:
+            self.dragging = True
+            self.drag_position = event.globalPos() - self.parent.frameGeometry().topLeft()
+            event.accept()
+            
+    def mouseMoveEvent(self, event):
+        """マウスムーブイベント（ドラッグ中）"""
+        if event.buttons() == Qt.LeftButton and self.dragging:
+            self.parent.move(event.globalPos() - self.drag_position)
+            event.accept()
+            
+    def mouseReleaseEvent(self, event):
+        """マウスリリースイベント（ドラッグ終了）"""
+        self.dragging = False
+        event.accept()
+
+
 class TranslatorWindow(QMainWindow):
     """翻訳ツールのメインウィンドウ"""
     
@@ -233,67 +370,58 @@ class TranslatorWindow(QMainWindow):
         
         # 翻訳ログの読み込み
         self.translation_logs = self.load_translation_logs()
-        self.current_log_index = -1  # 現在表示中のログインデックス
+        # 初期表示は空にする（-1に設定）
+        self.current_log_index = -1
         
         # ウィンドウの設定
-        self.setWindowTitle("お手軽翻訳ツール")
+        # self.setWindowTitle("お手軽翻訳ツール")
         self.resize(
             self.config.get("ui", {}).get("window_width", 500),
             self.config.get("ui", {}).get("window_height", 600)
         )
         
-        # 常に最前面に表示
-        if self.config.get("ui", {}).get("always_on_top", True):
+        # タイトルバーを削除してカスタムタイトルバーを使用
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.is_always_on_top = self.config.get("ui", {}).get("always_on_top", True)
+        if self.is_always_on_top:
             self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         
         # 中央ウィジェットの設定
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
+        self.layout.setContentsMargins(0, 0, 0, 0)  # 余白をなくす
         
-        # 操作説明ラベル
-        self.instruction_label = QLabel(self.get_instruction_text())
-        self.instruction_label.setWordWrap(True)
-        self.layout.addWidget(self.instruction_label)
+        # ホットキーテキストを取得
+        hotkey_text = self.get_hotkey_text()
+        
+        # カスタムタイトルバー
+        self.title_bar = CustomTitleBar(self, hotkey_text)
+        self.layout.addWidget(self.title_bar)
+        
+        # メインコンテンツ用のコンテナ
+        self.content_widget = QWidget()
+        self.content_layout = QVBoxLayout(self.content_widget)
+        self.content_layout.setContentsMargins(10, 10, 10, 10)
         
         # テキスト表示エリア
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)  # 読み取り専用
         self.text_edit.setFont(QFont("Yu Gothic UI", 10))
-        self.layout.addWidget(self.text_edit)
+        self.content_layout.addWidget(self.text_edit)
         
-        # ナビゲーションボタン（前後の翻訳に移動）
-        self.nav_layout = QHBoxLayout()
+        # ログ情報ラベルを削除
+        # self.log_info_label = QLabel("翻訳履歴: 0/0")
+        # self.log_info_label.setAlignment(Qt.AlignCenter)
+        # self.content_layout.addWidget(self.log_info_label)
         
-        # 前の翻訳ボタン
-        self.prev_button = QPushButton("← 前の翻訳")
-        self.prev_button.clicked.connect(self.show_prev_translation)
-        self.prev_button.setEnabled(False)  # 初期状態では無効
-        self.nav_layout.addWidget(self.prev_button)
-        
-        # ログ情報ラベル
-        self.log_info_label = QLabel("翻訳履歴: 0/0")
-        self.log_info_label.setAlignment(Qt.AlignCenter)
-        self.nav_layout.addWidget(self.log_info_label)
-        
-        # 次の翻訳ボタン
-        self.next_button = QPushButton("次の翻訳 →")
-        self.next_button.clicked.connect(self.show_next_translation)
-        self.next_button.setEnabled(False)  # 初期状態では無効
-        self.nav_layout.addWidget(self.next_button)
-        
-        self.layout.addLayout(self.nav_layout)
+        # メインレイアウトに追加
+        self.layout.addWidget(self.content_widget)
         
         # ステータスバー
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("準備完了")
-        
-        # ツールバーの設定
-        self.setup_toolbar()
-        
-        # メニューバーの設定
-        self.setup_menu()
         
         # キーボードリスナーの設定
         self.is_shift_pressed = False
@@ -318,6 +446,9 @@ class TranslatorWindow(QMainWindow):
         
         # 翻訳ログの表示を更新
         self.update_log_navigation()
+        
+        # ダークテーマを適用
+        self.apply_dark_theme()
         
     def load_config(self):
         """設定ファイルを読み込む"""
@@ -614,6 +745,10 @@ class TranslatorWindow(QMainWindow):
     def clear_text(self):
         """テキストエリアをクリア"""
         self.text_edit.clear()
+        # current_log_indexを-1に設定して初期状態に戻す
+        self.current_log_index = -1
+        # ナビゲーションボタンの状態を更新
+        self.update_log_navigation()
         self.capture_count = 0
         self.status_bar.showMessage("テキストをクリアしました", 3000)
         
@@ -638,6 +773,7 @@ class TranslatorWindow(QMainWindow):
         
     def toggle_always_on_top(self, checked):
         """常に最前面に表示する設定を切り替え"""
+        self.is_always_on_top = checked
         flags = self.windowFlags()
         if checked:
             self.setWindowFlags(flags | Qt.WindowStaysOnTopHint)
@@ -664,53 +800,40 @@ class TranslatorWindow(QMainWindow):
         # 親クラスのcloseEventを呼び出す
         super().closeEvent(event)
         
-    def setup_toolbar(self):
-        """ツールバーの設定"""
-        toolbar = QToolBar("メインツールバー")
-        self.addToolBar(toolbar)
+    def get_hotkey_text(self):
+        """ホットキーテキストを取得（短い形式）"""
+        if self.config and "hotkeys" in self.config and "capture" in self.config["hotkeys"]:
+            capture_hotkey = self.config["hotkeys"]["capture"]
+            modifiers = []
+            if capture_hotkey.get("win", False):
+                modifiers.append("Win")
+            if capture_hotkey.get("alt", False):
+                modifiers.append("Alt")
+            if capture_hotkey.get("shift", False):
+                modifiers.append("Shift")
+            key = capture_hotkey.get("key", "x").upper()
+            return "+".join(modifiers) + "+" + key
+        else:
+            return "Win+Alt+X"
         
-        # キャプチャボタン
-        capture_action = QAction(QIcon(), "キャプチャ", self)
-        capture_action.triggered.connect(self.start_capture)
-        toolbar.addAction(capture_action)
+    def update_log_navigation(self):
+        """ナビゲーションボタンの状態を更新"""
+        total_logs = len(self.translation_logs)
         
-        # クリアボタン
-        clear_action = QAction(QIcon(), "クリア", self)
-        clear_action.triggered.connect(self.clear_text)
-        toolbar.addAction(clear_action)
-        
-    def setup_menu(self):
-        """メニューバーの設定"""
-        menu_bar = self.menuBar()
-        
-        # ファイルメニュー
-        file_menu = menu_bar.addMenu("ファイル")
-        
-        # エクスポートアクション
-        export_action = QAction("テキストをエクスポート", self)
-        export_action.triggered.connect(self.export_text)
-        file_menu.addAction(export_action)
-        
-        # 翻訳履歴クリアアクション
-        clear_history_action = QAction("翻訳履歴をクリア", self)
-        clear_history_action.triggered.connect(self.clear_translation_history)
-        file_menu.addAction(clear_history_action)
-        
-        # 終了アクション
-        exit_action = QAction("終了", self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-        
-        # 設定メニュー
-        settings_menu = menu_bar.addMenu("設定")
-        
-        # 常に最前面表示アクション
-        topmost_action = QAction("常に最前面に表示", self)
-        topmost_action.setCheckable(True)
-        topmost_action.setChecked(self.config.get("ui", {}).get("always_on_top", True))
-        topmost_action.triggered.connect(self.toggle_always_on_top)
-        settings_menu.addAction(topmost_action)
-        
+        if total_logs > 0:
+            # 前へボタンの有効/無効
+            # 初期状態（-1）の場合でも、履歴があれば左ボタンを有効にする
+            prev_enabled = self.current_log_index > 0 or self.current_log_index == -1
+            
+            # 次へボタンの有効/無効
+            # 初期状態（-1）の場合は右ボタンを無効にする
+            next_enabled = self.current_log_index >= 0 and self.current_log_index < total_logs - 1
+            
+            # タイトルバーのナビゲーションボタンも更新
+            self.title_bar.update_navigation_buttons(prev_enabled, next_enabled)
+        else:
+            self.title_bar.update_navigation_buttons(False, False)
+            
     def show_current_translation(self):
         """現在選択されている翻訳を表示"""
         if 0 <= self.current_log_index < len(self.translation_logs):
@@ -734,10 +857,18 @@ class TranslatorWindow(QMainWindow):
     
     def show_prev_translation(self):
         """前の翻訳を表示"""
-        if self.current_log_index > 0:
-            self.current_log_index -= 1
-            self.show_current_translation()
-            self.update_log_navigation()
+        # 翻訳履歴がある場合
+        if len(self.translation_logs) > 0:
+            # 現在のインデックスが-1（初期状態）の場合は最新の翻訳を表示
+            if self.current_log_index == -1:
+                self.current_log_index = len(self.translation_logs) - 1
+                self.show_current_translation()
+                self.update_log_navigation()
+            # それ以外の場合は前の翻訳を表示
+            elif self.current_log_index > 0:
+                self.current_log_index -= 1
+                self.show_current_translation()
+                self.update_log_navigation()
     
     def show_next_translation(self):
         """次の翻訳を表示"""
@@ -746,24 +877,6 @@ class TranslatorWindow(QMainWindow):
             self.show_current_translation()
             self.update_log_navigation()
     
-    def update_log_navigation(self):
-        """ナビゲーションボタンの状態とログ情報を更新"""
-        total_logs = len(self.translation_logs)
-        
-        if total_logs > 0:
-            current_index = self.current_log_index + 1  # 1-based for display
-            self.log_info_label.setText(f"翻訳履歴: {current_index}/{total_logs}")
-            
-            # 前へボタンの有効/無効
-            self.prev_button.setEnabled(self.current_log_index > 0)
-            
-            # 次へボタンの有効/無効
-            self.next_button.setEnabled(self.current_log_index < total_logs - 1)
-        else:
-            self.log_info_label.setText("翻訳履歴: 0/0")
-            self.prev_button.setEnabled(False)
-            self.next_button.setEnabled(False)
-            
     def clear_translation_history(self):
         """翻訳履歴をクリア"""
         reply = QMessageBox.question(
@@ -781,6 +894,49 @@ class TranslatorWindow(QMainWindow):
             self.update_log_navigation()
             self.text_edit.clear()
             self.status_bar.showMessage("翻訳履歴をクリアしました", 3000)
+            
+    def apply_dark_theme(self):
+        """ダークテーマを適用"""
+        palette = QPalette()
+        
+        # ウィンドウの背景色
+        palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        
+        # ウィジェットの背景色
+        palette.setColor(QPalette.WindowText, Qt.white)
+        palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.ToolTipBase, Qt.white)
+        palette.setColor(QPalette.ToolTipText, Qt.white)
+        
+        # テキストカラー
+        palette.setColor(QPalette.Text, Qt.white)
+        palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.ButtonText, Qt.white)
+        
+        # リンクカラー
+        palette.setColor(QPalette.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
+        palette.setColor(QPalette.HighlightedText, Qt.black)
+        
+        # アプリケーションに適用
+        self.setPalette(palette)
+        
+        # スタイルシートも適用
+        self.setStyleSheet("""
+            QTextEdit {
+                background-color: #2d2d2d;
+                color: #ffffff;
+                border: 1px solid #555555;
+            }
+            QStatusBar {
+                background-color: #2c3e50;
+                color: white;
+            }
+            QLabel {
+                color: #ffffff;
+            }
+        """)
 
 
 def main():
