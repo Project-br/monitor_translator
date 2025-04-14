@@ -421,7 +421,12 @@ class TranslatorWindow(QMainWindow):
         # テキスト表示エリア
         self.text_edit = QTextEdit()
         self.text_edit.setReadOnly(True)  # 読み取り専用
-        self.text_edit.setFont(QFont("Yu Gothic UI", 10))
+        
+        # 設定ファイルからフォント設定を読み込む
+        font_family = self.config.get("ui", {}).get("text", {}).get("font_family", "Yu Gothic UI")
+        font_size = self.config.get("ui", {}).get("text", {}).get("font_size", 10)
+        self.text_edit.setFont(QFont(font_family, font_size))
+        
         self.content_layout.addWidget(self.text_edit)
         
         # ログ情報ラベルを削除
@@ -866,17 +871,28 @@ class TranslatorWindow(QMainWindow):
             ocr_text = log.get("ocr_text", "")
             translated_text = log.get("translated_text", "")
             
-            result_text = (
-                f"【OCR結果】\n{ocr_text}\n\n"
-                f"【翻訳結果】\n{translated_text}\n\n"
-            )
+            # 設定ファイルから色を読み込む
+            ocr_color = self.config.get("ui", {}).get("text", {}).get("ocr_color", "#CCCCCC")
+            translation_color = self.config.get("ui", {}).get("text", {}).get("translation_color", "#FFFFFF")
+            
+            # 改行をHTMLの<br>タグに変換
+            ocr_text_html = ocr_text.replace("\n", "<br>")
+            translated_text_html = translated_text.replace("\n", "<br>")
+            
+            # HTMLフォーマットでテキストを作成
+            result_html = f"""
+            <div style="color: {ocr_color};">{ocr_text_html}</div>
+            <div style="margin: 10px;"></div>
+            <div style="color: {translation_color};">【翻訳結果】</div>
+            <div style="color: {translation_color}; font-weight: bold;">{translated_text_html}</div>
+            """
             
             self.text_edit.clear()
-            self.text_edit.insertPlainText(result_text)
+            self.text_edit.setHtml(result_html)
             self.text_edit.moveCursor(QTextCursor.Start)
         else:
             self.text_edit.clear()
-            self.text_edit.insertPlainText("翻訳履歴がありません")
+            self.text_edit.setPlainText("翻訳履歴がありません")
     
     def show_prev_translation(self):
         """前の翻訳を表示"""

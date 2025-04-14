@@ -93,5 +93,15 @@
     "timestamp": "2025-04-14 09:58:02",
     "ocr_text": "人 dem\nO\nfe)\nQD hehe\n@ ProBot Prime #\n@ RE\nC\n@ evs",
     "translated_text": "人 dem O fe) QD hehe @ ProBot Prime # @ RE C @ evs"
+  },
+  {
+    "timestamp": "2025-04-14 10:02:38",
+    "ocr_text": "ocr_text_htm1 = ocr_text.replace(\"\\n\", “<br>\")\ntranslated_text_html = translated text.replace(\"\\n\", “<t",
+    "translated_text": "ocr_text_htm1 = ocr_text.replace(\"\\n\", \"<br>\") translated_text_html = translated text.replace(\"\\n\", \"<t"
+  },
+  {
+    "timestamp": "2025-04-14 10:06:59",
+    "ocr_text": "Uncle Nelson\n\nYou won't be able to hire a dealer until one of their\nfriends has recommended you. Benji is friends with\nPeggy, Beth, and Ludwig. Focus on selling to them\nuntil one of them recommends you.",
+    "translated_text": "あなたは彼らの友人があなたを推奨するまでディーラーを雇うことはできません. ベンジーはペギー、ベス、ルドヴィヒとの友人です. 彼らの1人があなたを推奨するまで彼らに売ることに焦点を当てます。"
   }
 ]

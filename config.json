@@ -17,9 +17,15 @@
     "path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
   },
   "ui": {
-    "window_width": 400,
-    "window_height": 500,
-    "always_on_top": true
+    "window_width": 300,
+    "window_height": 250,
+    "always_on_top": true,
+    "text": {
+      "font_family": "Yu Gothic UI",
+      "font_size": 9,
+      "ocr_color": "#CCCCCC",
+      "translation_color": "#FFFFFF"
+    }
   },
   "ocr": {
     "languages": "eng+jpn",
