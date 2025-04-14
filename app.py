@@ -309,17 +309,10 @@ def main():
         return
     
     try:
-        # 翻訳サーバーをバックグラウンドで起動
-        server_proc = start_translation_server()
+        # 先にGUIを起動し、GUIからサーバーを起動するように変更
+        print("モニター翻訳ツールを起動します...")
         
-        # サーバーが起動に失敗した場合
-        if server_proc is None:
-            print("エラー: 翻訳サーバーの起動に失敗しました")
-            sys.exit(1)
-            
-        print("翻訳サーバーが起動しました。モニター翻訳ツールを起動します...")
-        
-        # モニター翻訳ツールを起動
+        # モニター翻訳ツールを起動（サーバー起動情報を渡す）
         exit_code = start_monitor_translator()
         
         # 翻訳モニターの終了コードを返す

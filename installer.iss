@@ -48,7 +48,7 @@ Source: "dist\ENJAPP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs c
 
 ; 設定ファイル
 Source: "config.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
-Source: "translation_logs.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+; ログファイルは含めない（初回実行時に自動生成される）
 
 ; Tesseract-OCRのインストールチェック用スクリプト
 Source: "check_tesseract.bat"; DestDir: "{app}"; Flags: ignoreversion

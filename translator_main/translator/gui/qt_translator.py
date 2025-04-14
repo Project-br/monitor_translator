@@ -26,6 +26,7 @@ from PyQt5.QtGui import QIcon, QFont, QTextCursor, QColor, QPalette, QMouseEvent
 from pynput import keyboard
 import json
 from datetime import datetime
+import requests  # サーバー接続確認用に追加
 
 # 相対インポート
 import os
@@ -342,6 +343,9 @@ class TranslatorWindow(QMainWindow):
         # クリップボードスレッドの初期化
         self.clipboard_thread = None
         
+        # サーバー監視スレッドの初期化
+        self.server_monitor_thread = None
+        
         # ハイライト状態の初期化
         self.is_highlighted = False
         
@@ -426,6 +430,9 @@ class TranslatorWindow(QMainWindow):
         
         # 翻訳クライアント
         self.translate_client = TranslateClient()
+        
+        # サーバー監視スレッドの開始
+        self.start_server_monitor()
         
         # スレッドセーフなクリップボード操作のためのタイマー
         self.clipboard_timer = None
@@ -855,6 +862,12 @@ class TranslatorWindow(QMainWindow):
         
     def closeEvent(self, event):
         """ウィンドウが閉じられるときの処理"""
+        # 設定を保存
+        self.save_config()
+        
+        # 翻訳ログを保存
+        self.save_translation_logs()
+        
         # キーボードリスナーを停止
         if hasattr(self, 'kb_listener'):
             self.kb_listener.stop()
@@ -864,6 +877,14 @@ class TranslatorWindow(QMainWindow):
             self.clipboard_thread.stop()
             self.clipboard_thread.wait()
             
+        # サーバー監視スレッドを停止
+        if self.server_monitor_thread and self.server_monitor_thread.isRunning():
+            self.server_monitor_thread.stop()
+            self.server_monitor_thread.wait()
+        
+        # サーバープロセスを終了
+        self.terminate_server_process()
+        
         # 親クラスのcloseEventを呼び出す
         super().closeEvent(event)
         
@@ -1113,6 +1134,172 @@ class TranslatorWindow(QMainWindow):
             self.status_bar.showMessage("翻訳結果をクリップボードにコピーしました", 3000)
         else:
             self.status_bar.showMessage("翻訳結果がありません", 3000)
+
+    def start_server_monitor(self):
+        """翻訳サーバーを起動し、監視スレッドを開始する"""
+        self.status_bar.showMessage("翻訳サーバーを起動しています...")
+        
+        # サーバープロセスを起動
+        server_process = self.start_translation_server()
+        
+        # サーバー監視スレッドを開始
+        self.server_monitor_thread = ServerMonitorThread(server_process)
+        self.server_monitor_thread.server_status_changed.connect(self.update_server_status)
+        self.server_monitor_thread.server_ready.connect(self.on_server_ready)
+        self.server_monitor_thread.start()
+
+    def update_server_status(self, status_message):
+        """サーバーステータスを更新する"""
+        self.status_bar.showMessage(status_message)
+
+    def on_server_ready(self):
+        """サーバーが準備完了したときの処理"""
+        # 翻訳クライアントを初期化（または再初期化）
+        self.translate_client = TranslateClient()
+        self.status_bar.showMessage("翻訳サーバー準備完了")
+
+    def start_translation_server(self):
+        """翻訳サーバーを起動する"""
+        # PyInstallerでパッケージ化されているかどうかを確認
+        is_packaged = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+        
+        # 現在の実行ファイルのディレクトリを取得
+        if is_packaged:
+            current_dir = os.path.dirname(sys.executable)
+        else:
+            current_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        
+        # 翻訳サーバースクリプトのパスを構築
+        if is_packaged:
+            # パッケージ化されている場合は、現在の実行ファイル自体をサーバーモードで起動
+            exe_path = sys.executable
+            
+            # 環境変数を設定してサーバーモードで起動
+            env = os.environ.copy()
+            env['ENJAPP_SERVER_MODE'] = '1'
+            
+            # Windowsの場合
+            server_process = subprocess.Popen(
+                [exe_path, "--server"],
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                env=env,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+        else:
+            # 通常の実行（パッケージ化されていない場合）
+            server_script = os.path.join(
+                current_dir, 
+                "translator_main", 
+                "translator", 
+                "server_client", 
+                "translate_server_run.py"
+            )
+            
+            # Pythonインタープリターのパスを取得
+            python_exe = sys.executable
+            
+            # 新しいプロセスグループで起動
+            server_process = subprocess.Popen(
+                [python_exe, server_script],
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+        
+        print(f"翻訳サーバープロセスを開始しました (PID: {server_process.pid})")
+        return server_process
+
+    def terminate_server_process(self):
+        """サーバープロセスを終了する"""
+        if hasattr(self.server_monitor_thread, 'server_process') and self.server_monitor_thread.server_process:
+            try:
+                print("翻訳サーバーを終了しています...")
+                # Windowsの場合
+                import signal
+                # CTRL+Cシグナルを送信
+                self.server_monitor_thread.server_process.send_signal(signal.CTRL_C_EVENT)
+                
+                # 最大5秒待機
+                for i in range(10):
+                    if self.server_monitor_thread.server_process.poll() is not None:
+                        print("翻訳サーバーを正常に終了しました")
+                        break
+                    time.sleep(0.5)
+                
+                # それでも終了していない場合は強制終了
+                if self.server_monitor_thread.server_process.poll() is None:
+                    self.server_monitor_thread.server_process.terminate()
+                    print("翻訳サーバーを強制終了しました")
+            except Exception as e:
+                print(f"サーバー終了中にエラーが発生しました: {e}")
+
+    def save_config(self):
+        """設定ファイルを保存する"""
+        try:
+            config_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+                "config.json"
+            )
+            
+            # 現在のウィンドウサイズを設定に反映
+            if "ui" not in self.config:
+                self.config["ui"] = {}
+            self.config["ui"]["window_width"] = self.width()
+            self.config["ui"]["window_height"] = self.height()
+            self.config["ui"]["always_on_top"] = self.is_always_on_top
+            
+            # 設定ファイルを保存
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, ensure_ascii=False, indent=2)
+            print("設定ファイルを保存しました")
+        except Exception as e:
+            print(f"設定ファイルの保存中にエラーが発生しました: {e}")
+
+
+class ServerMonitorThread(QThread):
+    # シグナル定義
+    server_status_changed = pyqtSignal(str)  # サーバーステータスが変わったときに発火
+    server_ready = pyqtSignal()  # サーバーが準備完了したときに発火
+    
+    def __init__(self, server_process=None):
+        super().__init__()
+        self.server_process = server_process
+        self.running = True
+        self.server_is_ready = False
+    
+    def run(self):
+        retry_count = 0
+        max_retries = 60  # 最大リトライ回数
+        retry_interval = 2  # リトライ間隔（秒）
+        
+        while self.running and retry_count < max_retries:
+            # サーバープロセスがある場合、終了していないか確認
+            if self.server_process and self.server_process.poll() is not None:
+                self.server_status_changed.emit("サーバーが予期せず終了しました")
+                return
+            
+            # サーバーの応答を確認
+            try:
+                response = requests.get("http://127.0.0.1:11451/docs", timeout=5)
+                if response.status_code == 200:
+                    self.server_is_ready = True
+                    self.server_status_changed.emit("翻訳サーバー準備完了")
+                    self.server_ready.emit()
+                    break
+            except requests.RequestException:
+                retry_count += 1
+                self.server_status_changed.emit(f"サーバー起動待機中... ({retry_count}/{max_retries})")
+            
+            time.sleep(retry_interval)
+        
+        if not self.server_is_ready and self.running:
+            self.server_status_changed.emit("サーバー接続タイムアウト。翻訳機能が使用できない可能性があります。")
+    
+    def stop(self):
+        self.running = False
 
 
 # アプリケーションのメイン関数

@@ -163,5 +163,25 @@
     "timestamp": "2025-04-14 12:32:36",
     "ocr_text": "try:\nfrom translator_main.translator.gui.qt_translator import main as qt_main",
     "translated_text": "試してみてください: から translator_main.translator.gui.qt_translator 輸入主として qt_main"
+  },
+  {
+    "timestamp": "2025-04-14 13:31:45",
+    "ocr_text": "ee FSD\nif not server_ready:\nprint(\" 警 告 ・ サー バー の 応答 を 確認 で きま せん で し た が 、 ブ プロ セス [\nPrint(f\" 憲 訳 サー バー プロ セス が 開始 され まし た (PID: {server_proce:\nbe",
+    "translated_text": "FSD if not server_ready: print(\" 警告 ・ サーバー バー の 答え を 確認 で きま せん で し た が, ブ プロセス [ プリント(f\" 憲 訳 サーバー バー プロセス が 始まる まし た (PID: {server_proce: be し た)"
+  },
+  {
+    "timestamp": "2025-04-14 13:32:06",
+    "ocr_text": "atexit.register(cleanup_server)\nreturn server_process",
+    "translated_text": "atexit.register(cleanup_server) 返信サーバー_プロセス"
+  },
+  {
+    "timestamp": "2025-04-14 13:35:02",
+    "ocr_text": "、、 Borshch sszo\nYB OcR と モデ ル が 既に は いっ て る か ら 難 な く 動い て る\nどっ ち も な い PC に いれ る と どう な る か テス ト す る",
+    "translated_text": "、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、、"
+  },
+  {
+    "timestamp": "2025-04-14 13:35:15",
+    "ocr_text": "self. server.monitor_thread.server_process",
+    "translated_text": "プロセス / プロセス / プロセス / プロセス / プロセス"
   }
 ]
