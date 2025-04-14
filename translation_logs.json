@@ -113,5 +113,25 @@
     "timestamp": "2025-04-14 10:41:30",
     "ocr_text": "Optimized models are published here in ONNX\nformat to run with ONNX Runtime on CPU and GPU\nacross devices, including server platforms, Windows,\nLinux and Mac desktops, and mobile CPUs, with the\nprecision best suited to each of these targets.",
     "translated_text": "最適化されたモデルは ONNX 形式で、サーバープラットフォーム、Windows、Linux、Mac デスクトップ、モバイル CPU を含む各デバイスの CPU と GPU で、それぞれのターゲットに最適な精度で実行できます。"
+  },
+  {
+    "timestamp": "2025-04-14 10:44:46",
+    "ocr_text": "# スク リプ ト が 存在 する か 確認\n\nif not os.path.exists(translator_script):\nPrint(f\" エ ラー: 翻訳 モニ ター スク リプ ト が 見 つか り ませ ん : {translator_script}\")\nreturn 1 oe\n\n# 翻訳 モニ ター を 現在 の プロ セス で 実行 (制御 を 移す )\n\ntranslator_process = subprocess.run([sys.executable, translator_script])\n\nreturn translator_process.returncode\n\n昌和",
+    "translated_text": "トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ"
+  },
+  {
+    "timestamp": "2025-04-14 10:47:23",
+    "ocr_text": "# スク リプ ト が 存在 する か 確認\nif not os.path.exists(translator_script):\nprint(f\" エ ラー: 翻訳 モニ ター スク リプ ト が 見 つか り ま せん : {translator_script}\")\nreturn 1\n# 翻訳 モニ ター を 現在 の プロ セス で 実行 (制御 を 移す )\ntranslator_process = subprocess.run([sys.executable, translator_script])\nreturn translator_process.returncode",
+    "translated_text": "トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ > トップページ"
+  },
+  {
+    "timestamp": "2025-04-14 10:51:13",
+    "ocr_text": "Welcome to Hyland Point.\nThis is our territory,\nDon't interfere.\n-TB",
+    "translated_text": "Hyland Pointへようこそ!これは我々の領土です、干渉しないでください。"
+  },
+  {
+    "timestamp": "2025-04-14 10:51:28",
+    "ocr_text": "Uncle Nelson\n\nGoddamn, good to hear your voice, buddy! Looks\nlike our luck finally ran out - the feds have got me\nlocked up while wait for a trial. Glad to hear you\nmanaged to slip out, though.",
+    "translated_text": "ネルソン・ゴダムンおじさん、あなたの声が聞こえてよかった、友よ! ようやく私たちの運が飛び出したように見えます - フィードは裁判を待つ間に私を閉じ込めました。"
   }
 ]

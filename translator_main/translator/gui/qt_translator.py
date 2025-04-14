@@ -21,7 +21,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit,
                             QVBoxLayout, QHBoxLayout, QWidget, QLabel, QPushButton,
                             QStatusBar, QAction, QMenu, QToolBar, QFileDialog, QMessageBox,
                             QFrame)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings, QPoint
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings, QPoint, QMetaObject, pyqtSlot, QEvent
 from PyQt5.QtGui import QIcon, QFont, QTextCursor, QColor, QPalette, QMouseEvent
 from pynput import keyboard
 import json
@@ -38,21 +38,34 @@ sys.path.append(parent_dir)
 # 翻訳クライアントをインポート
 from server_client.translate_client import TranslateClient
 
+# カスタムイベント定義
+class QCaptureEvent(QEvent):
+    """キャプチャ開始用カスタムイベント"""
+    EVENT_TYPE = QEvent.Type(QEvent.registerEventType())
+    
+    def __init__(self):
+        super().__init__(self.EVENT_TYPE)
+
 class ClipboardMonitorThread(QThread):
     """クリップボードを監視するスレッド"""
     image_captured = pyqtSignal(object)
     status_update = pyqtSignal(str)  # ステータス更新用シグナル
     request_clear_clipboard = pyqtSignal()  # クリップボードクリアリクエスト用シグナル
     request_launch_snipping_tool = pyqtSignal()  # スニッピングツール起動リクエスト用シグナル
+    request_get_clipboard_image = pyqtSignal()  # クリップボード画像取得リクエスト用シグナル
+    clipboard_image_result = pyqtSignal(object)  # クリップボード画像結果用シグナル
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.running = False
+        self.clipboard_image = None
         
     def run(self):
         self.running = True
         # スニッピングツールの起動をメインスレッドにリクエスト
         self.request_launch_snipping_tool.emit()
+        # スニッピングツールが起動するまで少し待つ
+        time.sleep(0.5)
         self.check_clipboard()
         
     def stop(self):
@@ -86,12 +99,18 @@ class ClipboardMonitorThread(QThread):
             attempt = 0
             
             # キャプチャ開始時のクリップボード内容を取得（比較用）
-            initial_img = self.get_clipboard_image()
+            # メインスレッドに画像取得をリクエスト
+            self.request_get_clipboard_image.emit()
+            time.sleep(0.1)  # 少し待ってメインスレッドの処理を待つ
+            initial_img = self.clipboard_image
             
             while self.running and attempt < max_attempts:
                 try:
                     # 現在のクリップボード内容を取得
-                    current_img = self.get_clipboard_image()
+                    # メインスレッドに画像取得をリクエスト
+                    self.request_get_clipboard_image.emit()
+                    time.sleep(0.1)  # 少し待ってメインスレッドの処理を待つ
+                    current_img = self.clipboard_image
                     
                     # 画像が取得できて、かつ初期状態と異なる場合
                     if current_img is not None:
@@ -137,43 +156,14 @@ class ClipboardMonitorThread(QThread):
     
     def clear_clipboard(self):
         """クリップボードの内容をクリアする"""
-        try:
-            # スレッドからクリップボードを操作するとエラーになる場合があるため、
-            # エラーをキャッチして無視する
-            try:
-                # PyQtのクリップボードAPIを使用
-                clipboard = QApplication.clipboard()
-                clipboard.clear()
-                print("クリップボードをクリアしました")
-            except Exception as e:
-                error_msg = f"クリップボードクリアエラー: {e}"
-                print(error_msg)
-                # エラーメッセージをシグナルで送信
-                self.status_update.emit(error_msg)
-        except Exception:
-            # 最後のエラーハンドリング
-            pass
-    
+        # メインスレッドにクリップボードクリアをリクエスト
+        self.request_clear_clipboard.emit()
+        
     def get_clipboard_image(self):
         """クリップボードから画像を取得する"""
-        try:
-            # PIL.ImageGrabを使用する方法を試す（より信頼性が高い）
-            try:
-                img = ImageGrab.grabclipboard()
-                if isinstance(img, Image.Image):
-                    return img
-            except Exception as e:
-                error_msg = f"ImageGrabでのクリップボード取得に失敗: {e}"
-                self.status_update.emit(error_msg)
-                print(error_msg)
-            
-            # 画像が取得できなかった場合
-            return None
-        except Exception as e:
-            error_msg = f"クリップボード読み取りエラー: {e}"
-            self.status_update.emit(error_msg)
-            print(error_msg)
-            return None
+        # この関数はもう直接使用しない
+        # 代わりにメインスレッドに画像取得をリクエストし、シグナルで結果を受け取る
+        return self.clipboard_image
 
 
 class CustomTitleBar(QFrame):
@@ -620,7 +610,9 @@ class TranslatorWindow(QMainWindow):
                     (not need_alt or self.is_alt_pressed) and 
                     (not need_win or self.is_win_pressed)):
                     print("ホットキーが押されました - キャプチャを開始します")
-                    self.start_capture()
+                    # メインスレッドで直接実行（QMetaObjectは使わない）
+                    # 代わりにQtのシグナル/スロットを使用
+                    QApplication.instance().postEvent(self, QCaptureEvent())
         except Exception as e:
             print(f"キー押下処理中にエラーが発生しました: {e}")
             
@@ -636,6 +628,15 @@ class TranslatorWindow(QMainWindow):
         except Exception as e:
             print(f"キー解放処理中にエラーが発生しました: {e}")
             
+    def event(self, event):
+        """イベント処理"""
+        if event.type() == QCaptureEvent.EVENT_TYPE:
+            # キャプチャイベントを処理
+            self.start_capture()
+            return True
+        return super().event(event)
+
+    @pyqtSlot()
     def start_capture(self):
         """キャプチャ処理を開始"""
         self.status_bar.showMessage("キャプチャを開始しています...")
@@ -649,12 +650,16 @@ class TranslatorWindow(QMainWindow):
         # スレッドセーフなクリップボード操作のためにクリップボードをクリア
         self.clear_clipboard()
         
+        # QApplicationの処理を一時的に進める（イベントループを回す）
+        QApplication.processEvents()
+        
         # 新しいスレッドを開始
         self.clipboard_thread = ClipboardMonitorThread(self)
         self.clipboard_thread.image_captured.connect(self.process_image)
         self.clipboard_thread.status_update.connect(self.update_status)
         self.clipboard_thread.request_clear_clipboard.connect(self.clear_clipboard)
         self.clipboard_thread.request_launch_snipping_tool.connect(self.launch_snipping_tool)
+        self.clipboard_thread.request_get_clipboard_image.connect(self.get_clipboard_image_for_thread)
         self.clipboard_thread.start()
         
     def clear_clipboard(self):
@@ -666,6 +671,37 @@ class TranslatorWindow(QMainWindow):
             print("メインスレッドからクリップボードをクリアしました")
         except Exception as e:
             print(f"メインスレッドからのクリップボードクリアエラー: {e}")
+
+    def get_clipboard_image_for_thread(self):
+        """スレッド用にクリップボードから画像を取得してシグナルで返す"""
+        try:
+            clipboard = QApplication.clipboard()
+            mime_data = clipboard.mimeData()
+            
+            if mime_data.hasImage():
+                # クリップボードから画像を取得
+                image = clipboard.image()
+                if not image.isNull():
+                    # QImageをnumpy配列に変換
+                    width, height = image.width(), image.height()
+                    ptr = image.constBits()
+                    ptr.setsize(image.byteCount())
+                    arr = np.array(ptr).reshape(height, width, 4)  # RGBA
+                    # RGBAからBGRに変換
+                    img = cv2.cvtColor(arr, cv2.COLOR_RGBA2BGR)
+                    
+                    # 結果をシグナルで返す
+                    if hasattr(self, 'clipboard_thread') and self.clipboard_thread:
+                        self.clipboard_thread.clipboard_image = img
+                        self.clipboard_thread.clipboard_image_result.emit(img)
+                    return
+        except Exception as e:
+            print(f"クリップボード画像取得エラー: {e}")
+        
+        # 画像が取得できなかった場合はNoneを返す
+        if hasattr(self, 'clipboard_thread') and self.clipboard_thread:
+            self.clipboard_thread.clipboard_image = None
+            self.clipboard_thread.clipboard_image_result.emit(None)
             
     def process_image(self, img):
         """画像を処理してOCRと翻訳を実行"""
