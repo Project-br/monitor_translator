@@ -30,7 +30,7 @@ OutputBaseFilename={#MyAppName}_Setup_{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 ; アイコン設定
-SetupIconFile=dist\ENJAPP\translator_main\translator\resources\icon.ico
+SetupIconFile=translator_main\translator\resources\icon.ico
 
 ; インターフェース設定
 WizardStyle=modern
@@ -76,23 +76,45 @@ end;
 // Tesseract-OCRのインストール確認
 function CheckTesseractInstalled(): Boolean;
 var
-  TesseractPath: String;
+  TesseractPath, TesseractPath32: String;
 begin
-  TesseractPath := ExpandConstant('{pf}\Tesseract-OCR\tesseract.exe');
-  Result := FileExists(TesseractPath);
+  // 64ビット版のパスをチェック
+  TesseractPath := ExpandConstant('{pf64}\Tesseract-OCR\tesseract.exe');
+  // 32ビット版のパスをチェック
+  TesseractPath32 := ExpandConstant('{pf32}\Tesseract-OCR\tesseract.exe');
+  
+  // いずれかのパスにファイルが存在すればOK
+  Result := FileExists(TesseractPath) or FileExists(TesseractPath32);
+  
+  // Program Files以外の一般的なインストール先もチェック
+  if not Result then
+  begin
+    TesseractPath := ExpandConstant('{commonpf}\Tesseract-OCR\tesseract.exe');
+    Result := FileExists(TesseractPath);
+  end;
 end;
 
 // インストール後の処理
 procedure CurStepChanged(CurStep: TSetupStep);
+var
+  ErrorCode: Integer;
 begin
   if CurStep = ssPostInstall then
   begin
     // Tesseract-OCRがインストールされているか確認
     if not CheckTesseractInstalled() then
     begin
-      MsgBox('Tesseract-OCRがインストールされていません。' + #13#10 +
+      if MsgBox('Tesseract-OCRがインストールされていません。' + #13#10 +
              'ENJAPPを使用するには、Tesseract-OCRをインストールしてください。' + #13#10 +
-             'https://github.com/UB-Mannheim/tesseract/wiki からダウンロードできます。', mbInformation, MB_OK);
+             '以下の手順でインストールできます:' + #13#10 +
+             '1. https://github.com/UB-Mannheim/tesseract/wiki にアクセス' + #13#10 +
+             '2. "tesseract-ocr-w64-setup-v5.x.x.exe" (64ビット版)をダウンロード' + #13#10 +
+             '3. ダウンロードしたファイルを実行してインストール' + #13#10 + #13#10 +
+             '今すぐTesseract-OCRのダウンロードページを開きますか？', 
+             mbConfirmation, MB_YESNO) = IDYES then
+      begin
+        ShellExec('open', 'https://github.com/UB-Mannheim/tesseract/wiki', '', '', SW_SHOW, ewNoWait, ErrorCode);
+      end;
     end;
   end;
 end;

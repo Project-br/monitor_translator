@@ -133,5 +133,35 @@
     "timestamp": "2025-04-14 10:51:28",
     "ocr_text": "Uncle Nelson\n\nGoddamn, good to hear your voice, buddy! Looks\nlike our luck finally ran out - the feds have got me\nlocked up while wait for a trial. Glad to hear you\nmanaged to slip out, though.",
     "translated_text": "ネルソン・ゴダムンおじさん、あなたの声が聞こえてよかった、友よ! ようやく私たちの運が飛び出したように見えます - フィードは裁判を待つ間に私を閉じ込めました。"
+  },
+  {
+    "timestamp": "2025-04-14 11:36:38",
+    "ocr_text": "EN\nJAPP",
+    "translated_text": "ジャップ"
+  },
+  {
+    "timestamp": "2025-04-14 11:41:39",
+    "ocr_text": "Borshch 11:38\noo ww",
+    "translated_text": "ボルシュ 11:38 oo ww"
+  },
+  {
+    "timestamp": "2025-04-14 11:55:57",
+    "ocr_text": "Unigie Nelson\n\nThere's a powerful cartel in town, the Benzies\nfamily. I figured they'd eventually be a problem, but\ndidn't think they'd find you this quickly...",
+    "translated_text": "ユニジー・ネルソン 市内には強力なカルテルがあり、ベンジーの家族です。私は彼らが最終的に問題になると思っていましたが、彼らがすぐにあなたを見つけるとは思っていませんでした。"
+  },
+  {
+    "timestamp": "2025-04-14 11:56:14",
+    "ocr_text": "Unigle Nelson\n\nLooks like you're gonna need somewhere low key\nto stay for a while. Head over to the mote! and ask\nabout getting a room.",
+    "translated_text": "Unigle Nelson 見た目は、あなたがしばらく滞在するためにどこかで低鍵を必要としているかのように見えます。"
+  },
+  {
+    "timestamp": "2025-04-14 11:56:27",
+    "ocr_text": "unlgle Nelson\n\nAfter that, you'll be needing some new equipment.\nThere's a hardware store just north-east of the\nmotel. Grab a grow tent. soil. and watering can.",
+    "translated_text": "unlgle Nelson その後、あなたは新しい設備を必要とします. モーテルの北東にハードウェアストアがあります. 成長テントを掘り起こします. 土<unk>。"
+  },
+  {
+    "timestamp": "2025-04-14 12:32:36",
+    "ocr_text": "try:\nfrom translator_main.translator.gui.qt_translator import main as qt_main",
+    "translated_text": "試してみてください: から translator_main.translator.gui.qt_translator 輸入主として qt_main"
   }
 ]

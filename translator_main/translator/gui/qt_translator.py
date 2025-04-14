@@ -328,7 +328,7 @@ class CustomTitleBar(QFrame):
 class TranslatorWindow(QMainWindow):
     """翻訳ツールのメインウィンドウ"""
     
-    def __init__(self):
+    def __init__(self, settings=None):
         super().__init__()
         
         # 設定の読み込み
@@ -556,11 +556,13 @@ class TranslatorWindow(QMainWindow):
         
     def setup_tesseract_path(self):
         """Tesseractのパスを設定"""
+        # 設定ファイルからパスを取得
         if self.config and "tesseract" in self.config and "path" in self.config["tesseract"]:
             default_path = self.config["tesseract"]["path"]
         else:
             default_path = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
         
+        # 環境変数からパスを取得
         tesseract_exe = os.environ.get("TESSERACT_PATH", default_path)
         tesseract_exe = tesseract_exe.strip()
         
@@ -568,10 +570,39 @@ class TranslatorWindow(QMainWindow):
         if os.path.exists(tesseract_exe):
             pytesseract.pytesseract.tesseract_cmd = tesseract_exe
             print(f"Tesseractパスを設定しました: {tesseract_exe}")
-        else:
-            print(f"警告: Tesseractが見つかりません: {tesseract_exe}")
-            self.status_bar.showMessage("警告: Tesseractが見つかりません", 5000)
-            
+            return True
+        
+        # 一般的なインストール場所を順番にチェック
+        possible_paths = [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",  # 64ビット版デフォルト
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",  # 32ビット版デフォルト
+            r"C:\Tesseract-OCR\tesseract.exe",  # カスタムインストール先
+            os.path.join(os.environ.get("PROGRAMFILES", "C:\\Program Files"), "Tesseract-OCR", "tesseract.exe"),
+            os.path.join(os.environ.get("PROGRAMFILES(X86)", "C:\\Program Files (x86)"), "Tesseract-OCR", "tesseract.exe")
+        ]
+        
+        # 各パスをチェック
+        for path in possible_paths:
+            if os.path.exists(path):
+                pytesseract.pytesseract.tesseract_cmd = path
+                print(f"Tesseractパスを設定しました: {path}")
+                
+                # 設定ファイルに保存して次回以降の起動で使用
+                if self.config:
+                    if "tesseract" not in self.config:
+                        self.config["tesseract"] = {}
+                    self.config["tesseract"]["path"] = path
+                    self.save_config()
+                
+                return True
+        
+        # Tesseractが見つからない場合
+        print(f"警告: Tesseractが見つかりません。以下のパスを確認しました:")
+        for path in possible_paths:
+            print(f" - {path}")
+        self.status_bar.showMessage("警告: Tesseractが見つかりません。設定から正しいパスを指定してください。", 5000)
+        return False
+    
     def start_keyboard_listener(self):
         """キーボードリスナーを開始"""
         self.kb_listener = keyboard.Listener(
@@ -887,10 +918,10 @@ class TranslatorWindow(QMainWindow):
             
             # HTMLフォーマットでテキストを作成
             result_html = f"""
-            <div style="color: {ocr_color};">{ocr_text_html}</div>
-            <div style="margin: 10px;"></div>
             <div style="color: {translation_color};">【翻訳結果】</div>
             <div style="color: {translation_color}; font-weight: bold;">{translated_text_html}</div>
+            <div style="margin: 10px;"></div>
+            <div style="color: {ocr_color};">{ocr_text_html}</div>
             """
             
             self.text_edit.clear()
@@ -1084,16 +1115,38 @@ class TranslatorWindow(QMainWindow):
             self.status_bar.showMessage("翻訳結果がありません", 3000)
 
 
+# アプリケーションのメイン関数
 def main():
-    """メイン関数"""
-    app = QApplication(sys.argv)
-    app.setStyle('Fusion')  # モダンなスタイルを適用
+    """
+    アプリケーションのメイン関数
+    app.pyから直接呼び出し可能
     
-    window = TranslatorWindow()
-    window.show()
-    
-    sys.exit(app.exec_())
+    戻り値:
+        int: 終了コード
+    """
+    try:
+        app = QApplication(sys.argv)
+        app.setStyle('Fusion')  # Fusionスタイルを適用
+        
+        # アプリケーション名とバージョンを設定
+        app.setApplicationName("ENJAPP")
+        app.setApplicationVersion("1.0.0")
+        
+        # 設定を読み込む
+        settings = QSettings("ENJAPP", "TranslatorApp")
+        
+        # メインウィンドウを作成
+        main_window = TranslatorWindow(settings)
+        main_window.show()
+        
+        # イベントループを開始
+        return app.exec_()
+    except Exception as e:
+        print(f"アプリケーション起動中にエラーが発生しました: {e}")
+        import traceback
+        traceback.print_exc()
+        return 1
 
-
+# スクリプトとして実行された場合
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -81,14 +81,29 @@ def start_translation_server():
     # 現在の実行ファイルのディレクトリを取得
     current_dir = get_project_root()
     
+    # PyInstallerでパッケージ化されているかどうかを確認
+    is_packaged = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    
     # 翻訳サーバースクリプトのパスを構築
-    server_script = os.path.join(
-        current_dir, 
-        "translator_main", 
-        "translator", 
-        "server_client", 
-        "translate_server_run.py"
-    )
+    if is_packaged:
+        # パッケージ化されている場合は、_MEIPASSディレクトリからの相対パスを使用
+        base_dir = sys._MEIPASS
+        server_script = os.path.join(
+            base_dir, 
+            "translator_main", 
+            "translator", 
+            "server_client", 
+            "translate_server_run.py"
+        )
+    else:
+        # 通常実行の場合
+        server_script = os.path.join(
+            current_dir, 
+            "translator_main", 
+            "translator", 
+            "server_client", 
+            "translate_server_run.py"
+        )
     
     # スクリプトが存在するか確認
     if not os.path.exists(server_script):
@@ -100,29 +115,59 @@ def start_translation_server():
     
     # サーバーをバックグラウンドで起動
     try:
-        # 新しいプロセスグループで起動（Windows対応）
-        if platform.system() == 'Windows':
-            server_process = subprocess.Popen(
-                [python_exe, server_script],
-                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+        # パッケージ化されている場合
+        if is_packaged:
+            # 現在の実行ファイル自体をサーバーモードで起動
+            exe_path = sys.executable
+            
+            # 環境変数を設定してサーバーモードで起動
+            env = os.environ.copy()
+            env['ENJAPP_SERVER_MODE'] = '1'
+            
+            if platform.system() == 'Windows':
+                server_process = subprocess.Popen(
+                    [exe_path, "--server"],
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+            else:
+                # Unix系OSの場合
+                server_process = subprocess.Popen(
+                    [exe_path, "--server"],
+                    preexec_fn=os.setsid,
+                    env=env,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
         else:
-            # Unix系OSの場合
-            server_process = subprocess.Popen(
-                [python_exe, server_script],
-                preexec_fn=os.setsid,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
+            # 通常の実行（パッケージ化されていない場合）
+            # 新しいプロセスグループで起動（Windows対応）
+            if platform.system() == 'Windows':
+                server_process = subprocess.Popen(
+                    [python_exe, server_script],
+                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+            else:
+                # Unix系OSの場合
+                server_process = subprocess.Popen(
+                    [python_exe, server_script],
+                    preexec_fn=os.setsid,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
         
         # サーバーの起動を確認するために待機
         print("サーバーの起動を確認しています...")
-        max_retries = 10
-        retry_interval = 1  # 秒
+        max_retries = 60  # 無制限に近い値に設定（60回のリトライ）
+        retry_interval = 2  # 秒
         server_ready = False
         
         for i in range(max_retries):
@@ -133,7 +178,7 @@ def start_translation_server():
                 
             # サーバーが応答するか確認
             try:
-                response = requests.get("http://127.0.0.1:11451/docs", timeout=1)
+                response = requests.get("http://127.0.0.1:11451/docs", timeout=5)  # タイムアウトを5秒に増加
                 if response.status_code == 200:
                     server_ready = True
                     break
@@ -166,6 +211,9 @@ def start_monitor_translator():
     """
     print("モニター翻訳ツールを起動しています...")
     
+    # PyInstallerでパッケージ化されているかどうかを確認
+    is_packaged = getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
+    
     # 現在の実行ファイルのディレクトリを取得
     current_dir = get_project_root()
     
@@ -173,37 +221,93 @@ def start_monitor_translator():
     # PyQt5版のGUIを使用する場合
     use_pyqt = True  # PyQt5版を使用するフラグ
     
-    if use_pyqt:
-        translator_script = os.path.join(
-            current_dir, 
-            "translator_main", 
-            "translator", 
-            "gui",
-            "qt_translator.py"
-        )
+    if is_packaged:
+        # パッケージ化されている場合は、直接モジュールをインポートして実行
+        try:
+            print("パッケージ化された環境でGUIを起動します...")
+            from translator_main.translator.gui.qt_translator import main as qt_main
+            # GUIをメインスレッドで実行
+            return qt_main()
+        except ImportError as e:
+            print(f"GUIモジュールのインポートに失敗しました: {e}")
+            # パスを調整して再試行
+            base_dir = sys._MEIPASS
+            sys.path.append(base_dir)
+            try:
+                from translator_main.translator.gui.qt_translator import main as qt_main
+                return qt_main()
+            except ImportError as e2:
+                print(f"調整後もGUIモジュールのインポートに失敗しました: {e2}")
+                return 1
+        except Exception as e:
+            print(f"GUI起動中に予期しないエラーが発生しました: {e}")
+            import traceback
+            traceback.print_exc()
+            return 1
     else:
-        # 従来のtkinter版
-        translator_script = os.path.join(
-            current_dir, 
-            "translator_main", 
-            "translator", 
-            "translator.py"
-        )
-    
-    # スクリプトが存在するか確認
-    if not os.path.exists(translator_script):
-        print(f"エラー: 翻訳モニタースクリプトが見つかりません: {translator_script}")
-        return 1
-    
-    # 翻訳モニターを現在のプロセスで実行（制御を移す）
-    translator_process = subprocess.run([sys.executable, translator_script])
-    
-    return translator_process.returncode
+        # 通常実行の場合
+        if use_pyqt:
+            translator_script = os.path.join(
+                current_dir, 
+                "translator_main", 
+                "translator", 
+                "gui",
+                "qt_translator.py"
+            )
+        else:
+            # 従来のtkinter版
+            translator_script = os.path.join(
+                current_dir, 
+                "translator_main", 
+                "translator", 
+                "translator.py"
+            )
+        
+        # スクリプトが存在するか確認
+        if not os.path.exists(translator_script):
+            print(f"エラー: 翻訳モニタースクリプトが見つかりません: {translator_script}")
+            return 1
+        
+        # 翻訳モニターを現在のプロセスで実行（制御を移す）
+        translator_process = subprocess.run([sys.executable, translator_script])
+        
+        return translator_process.returncode
 
 def main():
     """
     メイン実行関数
     """
+    # コマンドライン引数を解析
+    import argparse
+    parser = argparse.ArgumentParser(description='ENJAPP 翻訳ツール')
+    parser.add_argument('--server', action='store_true', help='サーバーモードで起動')
+    args = parser.parse_args()
+    
+    # サーバーモードで起動する場合
+    if args.server or os.environ.get('ENJAPP_SERVER_MODE') == '1':
+        print("サーバーモードで起動します...")
+        try:
+            from translator_main.translator.server_client.translate_server_run import start_server
+            start_server()
+        except ImportError as e:
+            print(f"サーバーモジュールのインポートに失敗しました: {e}")
+            # パッケージ化されている場合のパスを調整
+            if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+                base_dir = sys._MEIPASS
+                sys.path.append(base_dir)
+                try:
+                    from translator_main.translator.server_client.translate_server_run import start_server
+                    start_server()
+                except ImportError as e2:
+                    print(f"調整後もサーバーモジュールのインポートに失敗しました: {e2}")
+                    sys.exit(1)
+            else:
+                sys.exit(1)
+        except Exception as e:
+            print(f"サーバー起動中に予期しないエラーが発生しました: {e}")
+            sys.exit(1)
+        return
+    
     try:
         # 翻訳サーバーをバックグラウンドで起動
         server_proc = start_translation_server()
@@ -225,6 +329,8 @@ def main():
         print("\nプログラムが中断されました")
     except Exception as e:
         print(f"エラーが発生しました: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
     finally:
         # 明示的にサーバープロセスをクリーンアップ

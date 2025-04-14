@@ -1,6 +1,12 @@
 import requests
 import json
 import time
+import sys
+import os
+
+# PyInstallerでパッケージ化されているかどうかを確認する関数
+def is_packaged():
+    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 class TranslateClient:
     def __init__(self, server_url: str = "http://127.0.0.1:11451/translate"):
@@ -12,6 +18,22 @@ class TranslateClient:
         self.server_url = server_url
         self.max_retries = 3
         self.retry_delay = 2  # 秒
+        self.internal_translator = None
+        
+        # パッケージ化されている場合は内部翻訳機能を初期化
+        if is_packaged():
+            try:
+                from .model.translator_model import TranslatorModel
+                self.internal_translator = TranslatorModel()
+                print("内部翻訳モデルを初期化しました")
+            except ImportError as e:
+                print(f"内部翻訳モデルの初期化に失敗しました: {e}")
+                print("サーバー接続モードで動作します")
+                self.internal_translator = None
+            except Exception as e:
+                print(f"内部翻訳モデル初期化中にエラーが発生しました: {e}")
+                print("サーバー接続モードで動作します")
+                self.internal_translator = None
 
     def translate(self, text: str) -> str:
         """
@@ -22,6 +44,15 @@ class TranslateClient:
         """
         if not text or text.strip() == "":
             return "翻訳するテキストが空です。"
+        
+        # パッケージ化されていて内部翻訳機能が利用可能な場合
+        if is_packaged() and self.internal_translator:
+            try:
+                result = self.internal_translator.translate(text)
+                return result
+            except Exception as e:
+                print(f"内部翻訳処理でエラーが発生しました: {e}")
+                print("サーバー接続モードにフォールバックします")
             
         # リトライ処理を実装
         for attempt in range(self.max_retries):
