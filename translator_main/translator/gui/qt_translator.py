@@ -318,6 +318,11 @@ class CustomTitleBar(QFrame):
         """ファイルメニューを表示"""
         menu = QMenu(self)
         
+        # 設定ファイルを開くアクション
+        open_config_action = QAction("設定ファイルを開く", self)
+        open_config_action.triggered.connect(lambda: self.parent.open_config_file())
+        menu.addAction(open_config_action)
+        
         # エクスポートアクション
         export_action = QAction("テキストをエクスポート", self)
         export_action.triggered.connect(lambda: self.parent.export_text())
@@ -933,6 +938,18 @@ class TranslatorWindow(QMainWindow):
             self.update_log_navigation()
             self.text_edit.clear()
             self.status_bar.showMessage("翻訳履歴をクリアしました", 3000)
+            
+    def open_config_file(self):
+        """設定ファイルを開く"""
+        config_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+            "config.json"
+        )
+        if os.path.exists(config_path):
+            os.startfile(config_path)
+            self.status_bar.showMessage("設定ファイルを開きました", 3000)
+        else:
+            self.status_bar.showMessage("設定ファイルが見つかりません", 3000)
             
     def apply_dark_theme(self):
         """ダークテーマを適用"""
