@@ -207,7 +207,7 @@ class CustomTitleBar(QFrame):
         self.layout.setSpacing(3)  # ボタン間のスペースを調整
         
         # タイトルラベル
-        self.title_label = QLabel("翻訳")
+        self.title_label = QLabel("ENJAPP")
         self.title_label.setFont(QFont("Yu Gothic UI", 10, QFont.Bold))
         self.layout.addWidget(self.title_label)
         
