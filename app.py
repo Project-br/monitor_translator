@@ -170,12 +170,25 @@ def start_monitor_translator():
     current_dir = get_project_root()
     
     # 翻訳モニタースクリプトのパスを構築
-    translator_script = os.path.join(
-        current_dir, 
-        "translator_main", 
-        "translator", 
-        "translator.py"
-    )
+    # PyQt5版のGUIを使用する場合
+    use_pyqt = True  # PyQt5版を使用するフラグ
+    
+    if use_pyqt:
+        translator_script = os.path.join(
+            current_dir, 
+            "translator_main", 
+            "translator", 
+            "gui",
+            "qt_translator.py"
+        )
+    else:
+        # 従来のtkinter版
+        translator_script = os.path.join(
+            current_dir, 
+            "translator_main", 
+            "translator", 
+            "translator.py"
+        )
     
     # スクリプトが存在するか確認
     if not os.path.exists(translator_script):
