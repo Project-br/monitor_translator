@@ -108,5 +108,10 @@
     "timestamp": "2025-04-14 10:10:13",
     "ocr_text": "f @ <= self.current_log_index < len(self.translation_logs)\nlog = self.translation_logs[self.current_log_index]\nocr_text = log.get(“ocr_text™, \"\")\ntranslated_text = log.get(\"translated_text\", \"\")",
     "translated_text": "f @ <= self.current_log_index < len(self.translation_logs) log = self.translation_logs[self.current_log_index] ocr_text = log.get(”ocr_textTM, “”) translated_text = log.get(”translated_text”, “”)"
+  },
+  {
+    "timestamp": "2025-04-14 10:41:30",
+    "ocr_text": "Optimized models are published here in ONNX\nformat to run with ONNX Runtime on CPU and GPU\nacross devices, including server platforms, Windows,\nLinux and Mac desktops, and mobile CPUs, with the\nprecision best suited to each of these targets.",
+    "translated_text": "最適化されたモデルは ONNX 形式で、サーバープラットフォーム、Windows、Linux、Mac デスクトップ、モバイル CPU を含む各デバイスの CPU と GPU で、それぞれのターゲットに最適な精度で実行できます。"
   }
 ]

@@ -16,6 +16,7 @@ import io
 import cv2
 import numpy as np
 import pytesseract
+from PIL import ImageGrab, Image  # PIL関連のインポートを追加
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, 
                             QVBoxLayout, QHBoxLayout, QWidget, QLabel, QPushButton,
                             QStatusBar, QAction, QMenu, QToolBar, QFileDialog, QMessageBox,
