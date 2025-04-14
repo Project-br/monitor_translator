@@ -235,6 +235,13 @@ class CustomTitleBar(QFrame):
         self.file_button.clicked.connect(self.show_file_menu)
         self.layout.addWidget(self.file_button)
         
+        # ハイライトボタン
+        self.highlight_button = QPushButton("H")
+        self.highlight_button.setToolTip("背景をハイライト")
+        self.highlight_button.setCheckable(True)
+        self.highlight_button.clicked.connect(lambda checked: self.parent.toggle_highlight(checked))
+        self.layout.addWidget(self.highlight_button)
+        
         # クリアボタン
         self.clear_button = QPushButton("C")
         self.clear_button.setToolTip("テキストをクリア")
@@ -344,6 +351,9 @@ class TranslatorWindow(QMainWindow):
         # クリップボードスレッドの初期化
         self.clipboard_thread = None
         
+        # ハイライト状態の初期化
+        self.is_highlighted = False
+        
         # ウィンドウの設定
         self.resize(
             self.config.get("ui", {}).get("window_width", 500),
@@ -396,6 +406,9 @@ class TranslatorWindow(QMainWindow):
         
         # メインレイアウトに追加
         self.layout.addWidget(self.content_widget)
+        
+        # ハイライト状態を適用
+        self.apply_highlight()
         
         # ステータスバー
         self.status_bar = QStatusBar()
@@ -484,7 +497,7 @@ class TranslatorWindow(QMainWindow):
                 },
                 "ui": {
                     "window_width": 500,
-                    "window_height": 600,
+                "window_height": 600,
                     "always_on_top": True
                 },
                 "ocr": {
@@ -976,6 +989,29 @@ class TranslatorWindow(QMainWindow):
             }
         """)
         
+    def toggle_highlight(self, checked):
+        """背景のハイライト表示を切り替え"""
+        self.is_highlighted = checked
+        self.apply_highlight()
+        
+    def apply_highlight(self):
+        """ハイライト表示を適用"""
+        if self.is_highlighted:
+            # 半透明の黒背景を適用（透過率を下げて不透明度を上げる）
+            self.content_widget.setStyleSheet("""
+                QWidget#content_widget {
+                    background-color: rgba(0, 0, 0, 200);
+                    border-radius: 5px;
+                }
+            """)
+        else:
+            # 透明背景を適用
+            self.content_widget.setStyleSheet("""
+                QWidget#content_widget {
+                    background-color: transparent;
+                }
+            """)
+            
     def launch_snipping_tool(self):
         """Windowsスニッピングツールを起動する"""
         try:
