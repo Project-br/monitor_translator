@@ -19,11 +19,13 @@ import cv2
 import numpy as np
 import pytesseract
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QTextEdit, 
-                            QVBoxLayout, QWidget, QLabel, QPushButton,
-                            QStatusBar, QAction, QMenu, QToolBar, QFileDialog)
+                            QVBoxLayout, QHBoxLayout, QWidget, QLabel, QPushButton,
+                            QStatusBar, QAction, QMenu, QToolBar, QFileDialog, QMessageBox)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QSettings
 from PyQt5.QtGui import QIcon, QFont, QTextCursor
 from pynput import keyboard
+import json
+from datetime import datetime
 
 # 相対インポート
 import os
@@ -229,6 +231,10 @@ class TranslatorWindow(QMainWindow):
         # 設定の読み込み
         self.config = self.load_config()
         
+        # 翻訳ログの読み込み
+        self.translation_logs = self.load_translation_logs()
+        self.current_log_index = -1  # 現在表示中のログインデックス
+        
         # ウィンドウの設定
         self.setWindowTitle("お手軽翻訳ツール")
         self.resize(
@@ -255,6 +261,28 @@ class TranslatorWindow(QMainWindow):
         self.text_edit.setReadOnly(True)  # 読み取り専用
         self.text_edit.setFont(QFont("Yu Gothic UI", 10))
         self.layout.addWidget(self.text_edit)
+        
+        # ナビゲーションボタン（前後の翻訳に移動）
+        self.nav_layout = QHBoxLayout()
+        
+        # 前の翻訳ボタン
+        self.prev_button = QPushButton("← 前の翻訳")
+        self.prev_button.clicked.connect(self.show_prev_translation)
+        self.prev_button.setEnabled(False)  # 初期状態では無効
+        self.nav_layout.addWidget(self.prev_button)
+        
+        # ログ情報ラベル
+        self.log_info_label = QLabel("翻訳履歴: 0/0")
+        self.log_info_label.setAlignment(Qt.AlignCenter)
+        self.nav_layout.addWidget(self.log_info_label)
+        
+        # 次の翻訳ボタン
+        self.next_button = QPushButton("次の翻訳 →")
+        self.next_button.clicked.connect(self.show_next_translation)
+        self.next_button.setEnabled(False)  # 初期状態では無効
+        self.nav_layout.addWidget(self.next_button)
+        
+        self.layout.addLayout(self.nav_layout)
         
         # ステータスバー
         self.status_bar = QStatusBar()
@@ -288,47 +316,8 @@ class TranslatorWindow(QMainWindow):
         # スレッドセーフなクリップボード操作のためのタイマー
         self.clipboard_timer = None
         
-    def setup_toolbar(self):
-        """ツールバーの設定"""
-        toolbar = QToolBar("メインツールバー")
-        self.addToolBar(toolbar)
-        
-        # キャプチャボタン
-        capture_action = QAction(QIcon(), "キャプチャ", self)
-        capture_action.triggered.connect(self.start_capture)
-        toolbar.addAction(capture_action)
-        
-        # クリアボタン
-        clear_action = QAction(QIcon(), "クリア", self)
-        clear_action.triggered.connect(self.clear_text)
-        toolbar.addAction(clear_action)
-        
-    def setup_menu(self):
-        """メニューバーの設定"""
-        menu_bar = self.menuBar()
-        
-        # ファイルメニュー
-        file_menu = menu_bar.addMenu("ファイル")
-        
-        # エクスポートアクション
-        export_action = QAction("テキストをエクスポート", self)
-        export_action.triggered.connect(self.export_text)
-        file_menu.addAction(export_action)
-        
-        # 終了アクション
-        exit_action = QAction("終了", self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-        
-        # 設定メニュー
-        settings_menu = menu_bar.addMenu("設定")
-        
-        # 常に最前面表示アクション
-        topmost_action = QAction("常に最前面に表示", self)
-        topmost_action.setCheckable(True)
-        topmost_action.setChecked(self.config.get("ui", {}).get("always_on_top", True))
-        topmost_action.triggered.connect(self.toggle_always_on_top)
-        settings_menu.addAction(topmost_action)
+        # 翻訳ログの表示を更新
+        self.update_log_navigation()
         
     def load_config(self):
         """設定ファイルを読み込む"""
@@ -390,6 +379,38 @@ class TranslatorWindow(QMainWindow):
                     "psm": 6
                 }
             }
+            
+    def load_translation_logs(self):
+        """翻訳ログを読み込む"""
+        try:
+            log_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+                "translation_logs.json"
+            )
+            if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+                with open(log_path, 'r', encoding='utf-8') as f:
+                    logs = json.load(f)
+                print(f"翻訳ログを読み込みました: {len(logs)}件")
+                return logs
+            else:
+                print("翻訳ログが見つからないか空です。新規作成します。")
+                return []
+        except Exception as e:
+            print(f"翻訳ログの読み込み中にエラーが発生しました: {e}")
+            return []
+            
+    def save_translation_logs(self):
+        """翻訳ログを保存する"""
+        try:
+            log_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+                "translation_logs.json"
+            )
+            with open(log_path, 'w', encoding='utf-8') as f:
+                json.dump(self.translation_logs, f, ensure_ascii=False, indent=2)
+            print(f"翻訳ログを保存しました: {len(self.translation_logs)}件")
+        except Exception as e:
+            print(f"翻訳ログの保存中にエラーが発生しました: {e}")
             
     def get_instruction_text(self):
         """操作説明テキストを取得"""
@@ -541,12 +562,23 @@ class TranslatorWindow(QMainWindow):
             # 翻訳実行
             translated_text = self.translate_client.translate(ocr_text)
             
-            # 結果を表示
-            self.capture_count += 1
-            result_text = (
-                f"{self.capture_count}:\n【OCR結果】\n{ocr_text}\n\n【翻訳結果】\n{translated_text}\n\n"
-            )
-            self.append_text(result_text)
+            # 翻訳ログに追加
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_entry = {
+                "timestamp": timestamp,
+                "ocr_text": ocr_text,
+                "translated_text": translated_text
+            }
+            self.translation_logs.append(log_entry)
+            self.save_translation_logs()
+            
+            # 最新の翻訳を表示
+            self.current_log_index = len(self.translation_logs) - 1
+            self.show_current_translation()
+            
+            # ナビゲーションボタンの状態を更新
+            self.update_log_navigation()
+            
             self.status_bar.showMessage("処理完了", 3000)
             
         except Exception as e:
@@ -631,6 +663,124 @@ class TranslatorWindow(QMainWindow):
             
         # 親クラスのcloseEventを呼び出す
         super().closeEvent(event)
+        
+    def setup_toolbar(self):
+        """ツールバーの設定"""
+        toolbar = QToolBar("メインツールバー")
+        self.addToolBar(toolbar)
+        
+        # キャプチャボタン
+        capture_action = QAction(QIcon(), "キャプチャ", self)
+        capture_action.triggered.connect(self.start_capture)
+        toolbar.addAction(capture_action)
+        
+        # クリアボタン
+        clear_action = QAction(QIcon(), "クリア", self)
+        clear_action.triggered.connect(self.clear_text)
+        toolbar.addAction(clear_action)
+        
+    def setup_menu(self):
+        """メニューバーの設定"""
+        menu_bar = self.menuBar()
+        
+        # ファイルメニュー
+        file_menu = menu_bar.addMenu("ファイル")
+        
+        # エクスポートアクション
+        export_action = QAction("テキストをエクスポート", self)
+        export_action.triggered.connect(self.export_text)
+        file_menu.addAction(export_action)
+        
+        # 翻訳履歴クリアアクション
+        clear_history_action = QAction("翻訳履歴をクリア", self)
+        clear_history_action.triggered.connect(self.clear_translation_history)
+        file_menu.addAction(clear_history_action)
+        
+        # 終了アクション
+        exit_action = QAction("終了", self)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+        
+        # 設定メニュー
+        settings_menu = menu_bar.addMenu("設定")
+        
+        # 常に最前面表示アクション
+        topmost_action = QAction("常に最前面に表示", self)
+        topmost_action.setCheckable(True)
+        topmost_action.setChecked(self.config.get("ui", {}).get("always_on_top", True))
+        topmost_action.triggered.connect(self.toggle_always_on_top)
+        settings_menu.addAction(topmost_action)
+        
+    def show_current_translation(self):
+        """現在選択されている翻訳を表示"""
+        if 0 <= self.current_log_index < len(self.translation_logs):
+            log = self.translation_logs[self.current_log_index]
+            timestamp = log.get("timestamp", "不明")
+            ocr_text = log.get("ocr_text", "")
+            translated_text = log.get("translated_text", "")
+            
+            result_text = (
+                f"【日時】{timestamp}\n\n"
+                f"【OCR結果】\n{ocr_text}\n\n"
+                f"【翻訳結果】\n{translated_text}\n\n"
+            )
+            
+            self.text_edit.clear()
+            self.text_edit.insertPlainText(result_text)
+            self.text_edit.moveCursor(QTextCursor.Start)
+        else:
+            self.text_edit.clear()
+            self.text_edit.insertPlainText("翻訳履歴がありません")
+    
+    def show_prev_translation(self):
+        """前の翻訳を表示"""
+        if self.current_log_index > 0:
+            self.current_log_index -= 1
+            self.show_current_translation()
+            self.update_log_navigation()
+    
+    def show_next_translation(self):
+        """次の翻訳を表示"""
+        if self.current_log_index < len(self.translation_logs) - 1:
+            self.current_log_index += 1
+            self.show_current_translation()
+            self.update_log_navigation()
+    
+    def update_log_navigation(self):
+        """ナビゲーションボタンの状態とログ情報を更新"""
+        total_logs = len(self.translation_logs)
+        
+        if total_logs > 0:
+            current_index = self.current_log_index + 1  # 1-based for display
+            self.log_info_label.setText(f"翻訳履歴: {current_index}/{total_logs}")
+            
+            # 前へボタンの有効/無効
+            self.prev_button.setEnabled(self.current_log_index > 0)
+            
+            # 次へボタンの有効/無効
+            self.next_button.setEnabled(self.current_log_index < total_logs - 1)
+        else:
+            self.log_info_label.setText("翻訳履歴: 0/0")
+            self.prev_button.setEnabled(False)
+            self.next_button.setEnabled(False)
+            
+    def clear_translation_history(self):
+        """翻訳履歴をクリア"""
+        reply = QMessageBox.question(
+            self, 
+            "翻訳履歴のクリア", 
+            "すべての翻訳履歴をクリアしますか？\nこの操作は元に戻せません。",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            self.translation_logs = []
+            self.save_translation_logs()
+            self.current_log_index = -1
+            self.update_log_navigation()
+            self.text_edit.clear()
+            self.status_bar.showMessage("翻訳履歴をクリアしました", 3000)
 
 
 def main():

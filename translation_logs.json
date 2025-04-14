@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "2025-04-14 09:14:42",
+    "ocr_text": "se1f.trans1ation logs",
+    "translated_text": "se1f.trans1ation ロゴ"
+  },
+  {
+    "timestamp": "2025-04-14 09:14:55",
+    "ocr_text": "'Fusion \")",
+    "translated_text": "「合併」"
+  },
+  {
+    "timestamp": "2025-04-14 09:15:04",
+    "ocr_text": "sys-exit(app-exec_())",
+    "translated_text": "sys-exit(アプリ・エクセック_())"
+  },
+  {
+    "timestamp": "2025-04-14 09:15:27",
+    "ocr_text": "def main():",
+    "translated_text": "メイン():"
+  }
+]
