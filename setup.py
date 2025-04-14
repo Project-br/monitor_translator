@@ -18,6 +18,7 @@ setup(
         # GUI関連
         # tkinter is part of the Python standard library and doesn't need to be installed
         "pynput",         # キーボード・マウス入力の監視
+        "PyQt5",          # GUI フレームワーク
 
         # サーバー関連
         "fastapi",        # APIサーバー
@@ -35,15 +36,24 @@ setup(
     extras_require={
         "gpu": ["torch>=1.7.0"],                   # GPU使用時のみ必要
     },
+    # パッケージデータの追加
+    include_package_data=True,
+    # エントリーポイントの設定
     entry_points={
-        "console_scripts": [
-            "monitor-translator=translator_main.app:main",
+        'console_scripts': [
+            'monitor-translator=app:main',
         ],
     },
+    # パッケージメタデータ
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: End Users/Desktop',
+        'Topic :: Utilities',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
-    include_package_data=True,
 )
