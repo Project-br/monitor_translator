@@ -44,6 +44,7 @@ class ClipboardMonitorThread(QThread):
     image_captured = pyqtSignal(object)
     status_update = pyqtSignal(str)  # ステータス更新用シグナル
     request_clear_clipboard = pyqtSignal()  # クリップボードクリアリクエスト用シグナル
+    request_launch_snipping_tool = pyqtSignal()  # スニッピングツール起動リクエスト用シグナル
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -51,7 +52,8 @@ class ClipboardMonitorThread(QThread):
         
     def run(self):
         self.running = True
-        self.launch_snipping_tool()
+        # スニッピングツールの起動をメインスレッドにリクエスト
+        self.request_launch_snipping_tool.emit()
         self.check_clipboard()
         
     def stop(self):
@@ -373,6 +375,9 @@ class TranslatorWindow(QMainWindow):
         # 初期表示は空にする（-1に設定）
         self.current_log_index = -1
         
+        # クリップボードスレッドの初期化
+        self.clipboard_thread = None
+        
         # ウィンドウの設定
         # self.setWindowTitle("お手軽翻訳ツール")
         self.resize(
@@ -428,9 +433,6 @@ class TranslatorWindow(QMainWindow):
         self.is_alt_pressed = False
         self.is_win_pressed = False
         self.capture_count = 0
-        
-        # クリップボードモニタースレッド
-        self.clipboard_thread = None
         
         # キーボードリスナーの開始
         self.start_keyboard_listener()
@@ -645,10 +647,11 @@ class TranslatorWindow(QMainWindow):
         self.status_bar.showMessage("キャプチャを開始しています...")
         
         # 既存のスレッドがあれば停止
-        if self.clipboard_thread and self.clipboard_thread.isRunning():
+        if hasattr(self, 'clipboard_thread') and self.clipboard_thread and self.clipboard_thread.isRunning():
             self.clipboard_thread.stop()
             self.clipboard_thread.wait()
-            
+            self.clipboard_thread = None
+        
         # スレッドセーフなクリップボード操作のためにクリップボードをクリア
         self.clear_clipboard()
         
@@ -657,6 +660,7 @@ class TranslatorWindow(QMainWindow):
         self.clipboard_thread.image_captured.connect(self.process_image)
         self.clipboard_thread.status_update.connect(self.update_status)
         self.clipboard_thread.request_clear_clipboard.connect(self.clear_clipboard)
+        self.clipboard_thread.request_launch_snipping_tool.connect(self.launch_snipping_tool)
         self.clipboard_thread.start()
         
     def clear_clipboard(self):
@@ -744,6 +748,12 @@ class TranslatorWindow(QMainWindow):
         
     def clear_text(self):
         """テキストエリアをクリア"""
+        # 既存のスレッドがあれば停止して確実に終了させる
+        if hasattr(self, 'clipboard_thread') and self.clipboard_thread and self.clipboard_thread.isRunning():
+            self.clipboard_thread.stop()
+            self.clipboard_thread.wait()
+            self.clipboard_thread = None
+        
         self.text_edit.clear()
         # current_log_indexを-1に設定して初期状態に戻す
         self.current_log_index = -1
@@ -937,6 +947,27 @@ class TranslatorWindow(QMainWindow):
                 color: #ffffff;
             }
         """)
+        
+    def launch_snipping_tool(self):
+        """Windowsスニッピングツールを起動する"""
+        try:
+            # Windowsスクリーンクリップを直接起動（範囲選択モード）
+            subprocess.Popen(["explorer", "ms-screenclip:"])
+            self.status_bar.showMessage("スニッピングツールを起動しました")
+            print("スニッピングツールを起動しました")
+        except Exception as e:
+            error_msg = f"スニッピングツール起動エラー: {e}"
+            self.status_bar.showMessage(error_msg)
+            print(error_msg)
+            try:
+                # 代替方法としてスニッピングツールを起動
+                subprocess.Popen(["snippingtool.exe"])
+                self.status_bar.showMessage("代替方法でスニッピングツールを起動しました")
+                print("代替方法でスニッピングツールを起動しました")
+            except Exception as e2:
+                error_msg2 = f"代替スニッピングツール起動エラー: {e2}"
+                self.status_bar.showMessage(error_msg2)
+                print(error_msg2)
 
 
 def main():

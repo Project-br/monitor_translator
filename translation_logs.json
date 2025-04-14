@@ -63,5 +63,20 @@
     "timestamp": "2025-04-14 09:32:53",
     "ocr_text": "except KeyboardTnterrupt :",
     "translated_text": "KeyboardTnterruptを除く:"
+  },
+  {
+    "timestamp": "2025-04-14 09:34:05",
+    "ocr_text": "except Exception as e:",
+    "translated_text": "例外を除いて、e:"
+  },
+  {
+    "timestamp": "2025-04-14 09:39:27",
+    "ocr_text": "Uncle Nelson\n\nYou've got a decent base of operations and a\ngrowing customer base. You'll be pulling in some\nProper cash now, but you'll need help to manage all\nyour customers.",
+    "translated_text": "おじいちゃん あなたは運用の適切なベースと成長する顧客ベースを持っています あなたは今、いくつかの適切な現金を引き出すでしょうが、あなたはすべての顧客を管理するために助けを必要とします。"
+  },
+  {
+    "timestamp": "2025-04-14 09:39:48",
+    "ocr_text": "Uncle Nelson\n\nTime to think about recruiting a dealer. There's a\nguy... hmm... Benji Coleman his name is, 1 think.\nHe'll be the first dealer you can work with.",
+    "translated_text": "叔父ネルソンは、ディーラーを募集することを考える時間があります. 男がいる...ハム...ベンジー・コレマンは彼の名前です. 彼はあなたが働くことができる最初のディーラーになります。"
   }
 ]
