@@ -231,43 +231,49 @@ class CustomTitleBar(QFrame):
     def __init__(self, parent=None, hotkey_text=""):
         super().__init__(parent)
         self.parent = parent
-        self.setFixedHeight(40)  # タイトルバーの高さ
+        self.setFixedHeight(25)  # タイトルバーの高さを25pxに調整
         self.setStyleSheet("""
             CustomTitleBar {
-                background-color: #2c3e50;
+                background-color: rgba(44, 62, 80, 180);  /* 透明度を統一 */
                 color: white;
                 border: none;
             }
             QPushButton {
-                background-color: #2c3e50;
+                background-color: transparent;  /* 完全に透明 */
                 color: white;
                 border: none;
-                padding: 5px;
+                padding: 3px;
+                font-size: 11px;
+                min-width: 20px;
+                min-height: 20px;
             }
             QPushButton:hover {
-                background-color: #34495e;
+                background-color: rgba(52, 73, 94, 120);  /* ホバー時は少し色付け */
             }
             QPushButton#close_button:hover {
-                background-color: #e74c3c;
+                background-color: rgba(231, 76, 60, 120);  /* ホバー時は少し色付け */
             }
             QLabel {
                 color: white;
+                font-size: 10px;
+                background-color: transparent;  /* ラベルの背景を透明に */
             }
         """)
         
         # レイアウト
         self.layout = QHBoxLayout(self)
-        self.layout.setContentsMargins(5, 0, 5, 0)
+        self.layout.setContentsMargins(3, 0, 3, 0)
+        self.layout.setSpacing(3)  # ボタン間のスペースを調整
         
         # タイトルラベル
-        self.title_label = QLabel("お手軽翻訳ツール")
+        self.title_label = QLabel("翻訳")
         self.title_label.setFont(QFont("Yu Gothic UI", 10, QFont.Bold))
         self.layout.addWidget(self.title_label)
         
         # ホットキー表示
         if hotkey_text:
             self.hotkey_label = QLabel(f"[{hotkey_text}]")
-            self.hotkey_label.setFont(QFont("Yu Gothic UI", 8))
+            self.hotkey_label.setFont(QFont("Yu Gothic UI", 9))
             self.layout.addWidget(self.hotkey_label)
         
         # スペーサー
@@ -379,7 +385,6 @@ class TranslatorWindow(QMainWindow):
         self.clipboard_thread = None
         
         # ウィンドウの設定
-        # self.setWindowTitle("お手軽翻訳ツール")
         self.resize(
             self.config.get("ui", {}).get("window_width", 500),
             self.config.get("ui", {}).get("window_height", 600)
@@ -390,6 +395,9 @@ class TranslatorWindow(QMainWindow):
         self.is_always_on_top = self.config.get("ui", {}).get("always_on_top", True)
         if self.is_always_on_top:
             self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        
+        # 背景を透過
+        self.setAttribute(Qt.WA_TranslucentBackground)
         
         # 中央ウィジェットの設定
         self.central_widget = QWidget()
@@ -406,6 +414,7 @@ class TranslatorWindow(QMainWindow):
         
         # メインコンテンツ用のコンテナ
         self.content_widget = QWidget()
+        self.content_widget.setObjectName("content_widget")  # IDを設定
         self.content_layout = QVBoxLayout(self.content_widget)
         self.content_layout.setContentsMargins(10, 10, 10, 10)
         
@@ -425,7 +434,13 @@ class TranslatorWindow(QMainWindow):
         
         # ステータスバー
         self.status_bar = QStatusBar()
+        self.status_bar.setObjectName("status_bar")  # IDを設定
         self.setStatusBar(self.status_bar)
+        
+        # ステータスバーのフォントサイズを小さく
+        status_font = QFont("Yu Gothic UI", 8)
+        self.status_bar.setFont(status_font)
+        
         self.status_bar.showMessage("準備完了")
         
         # キーボードリスナーの設定
@@ -848,12 +863,10 @@ class TranslatorWindow(QMainWindow):
         """現在選択されている翻訳を表示"""
         if 0 <= self.current_log_index < len(self.translation_logs):
             log = self.translation_logs[self.current_log_index]
-            timestamp = log.get("timestamp", "不明")
             ocr_text = log.get("ocr_text", "")
             translated_text = log.get("translated_text", "")
             
             result_text = (
-                f"【日時】{timestamp}\n\n"
                 f"【OCR結果】\n{ocr_text}\n\n"
                 f"【翻訳結果】\n{translated_text}\n\n"
             )
@@ -909,25 +922,25 @@ class TranslatorWindow(QMainWindow):
         """ダークテーマを適用"""
         palette = QPalette()
         
-        # ウィンドウの背景色
-        palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        # ウィンドウの背景色を透明に
+        palette.setColor(QPalette.Window, QColor(0, 0, 0, 0))
         
         # ウィジェットの背景色
         palette.setColor(QPalette.WindowText, Qt.white)
-        palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        palette.setColor(QPalette.Base, QColor(0, 0, 0, 0))  # 完全透明
+        palette.setColor(QPalette.AlternateBase, QColor(0, 0, 0, 0))  # 完全透明
         palette.setColor(QPalette.ToolTipBase, Qt.white)
         palette.setColor(QPalette.ToolTipText, Qt.white)
         
         # テキストカラー
         palette.setColor(QPalette.Text, Qt.white)
-        palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        palette.setColor(QPalette.Button, QColor(53, 53, 53, 0))  # 透明
         palette.setColor(QPalette.ButtonText, Qt.white)
         
         # リンクカラー
         palette.setColor(QPalette.Link, QColor(42, 130, 218))
-        palette.setColor(QPalette.Highlight, QColor(42, 130, 218))
-        palette.setColor(QPalette.HighlightedText, Qt.black)
+        palette.setColor(QPalette.Highlight, QColor(42, 130, 218, 128))  # 半透明
+        palette.setColor(QPalette.HighlightedText, Qt.white)
         
         # アプリケーションに適用
         self.setPalette(palette)
@@ -935,16 +948,47 @@ class TranslatorWindow(QMainWindow):
         # スタイルシートも適用
         self.setStyleSheet("""
             QTextEdit {
-                background-color: #2d2d2d;
+                background-color: transparent;
                 color: #ffffff;
-                border: 1px solid #555555;
+                border: none;
             }
+            /* スクロールバーのスタイル設定 */
+            QScrollBar:vertical {
+                background-color: transparent;
+                width: 10px;
+                margin: 0px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: rgba(100, 100, 100, 120);  /* 半透明のハンドル */
+                min-height: 20px;
+                border-radius: 5px;
+            }
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+            /* ステータスバー設定 */
             QStatusBar {
-                background-color: #2c3e50;
-                color: white;
+                background-color: transparent;  /* 完全に透明 */
+                color: rgba(255, 255, 255, 120);  /* テキストは少し透過 */
+                font-size: 8px;  /* 文字サイズを小さく */
+            }
+            QStatusBar::item {
+                border: none;  /* 境界線を削除 */
             }
             QLabel {
                 color: #ffffff;
+            }
+            QWidget#content_widget {
+                background-color: transparent;
+            }
+            /* サイズ変更ハンドルは透過しない */
+            QSizeGrip {
+                background-color: rgba(44, 62, 80, 180);  /* 透過しない */
+                width: 16px;
+                height: 16px;
             }
         """)
         

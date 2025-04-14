@@ -78,5 +78,20 @@
     "timestamp": "2025-04-14 09:39:48",
     "ocr_text": "Uncle Nelson\n\nTime to think about recruiting a dealer. There's a\nguy... hmm... Benji Coleman his name is, 1 think.\nHe'll be the first dealer you can work with.",
     "translated_text": "叔父ネルソンは、ディーラーを募集することを考える時間があります. 男がいる...ハム...ベンジー・コレマンは彼の名前です. 彼はあなたが働くことができる最初のディーラーになります。"
+  },
+  {
+    "timestamp": "2025-04-14 09:49:16",
+    "ocr_text": "~ Borshch 7",
+    "translated_text": "・BORSHCH 7"
+  },
+  {
+    "timestamp": "2025-04-14 09:56:20",
+    "ocr_text": "self.layout = QHBoxLayout (self)\nself.layout.setContentsMargins(5, @, 5, @)",
+    "translated_text": "self.layout = QHBoxLayout (self) self.layout.setContentsMargins(5, @, 5, @)"
+  },
+  {
+    "timestamp": "2025-04-14 09:58:02",
+    "ocr_text": "人 dem\nO\nfe)\nQD hehe\n@ ProBot Prime #\n@ RE\nC\n@ evs",
+    "translated_text": "人 dem O fe) QD hehe @ ProBot Prime # @ RE C @ evs"
   }
 ]
