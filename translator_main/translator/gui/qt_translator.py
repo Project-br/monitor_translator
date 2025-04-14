@@ -13,8 +13,6 @@ import threading
 import time
 import subprocess
 import io
-import win32clipboard
-from PIL import Image, ImageGrab
 import cv2
 import numpy as np
 import pytesseract
@@ -142,9 +140,9 @@ class ClipboardMonitorThread(QThread):
             # スレッドからクリップボードを操作するとエラーになる場合があるため、
             # エラーをキャッチして無視する
             try:
-                win32clipboard.OpenClipboard()
-                win32clipboard.EmptyClipboard()
-                win32clipboard.CloseClipboard()
+                # PyQtのクリップボードAPIを使用
+                clipboard = QApplication.clipboard()
+                clipboard.clear()
                 print("クリップボードをクリアしました")
             except Exception as e:
                 error_msg = f"クリップボードクリアエラー: {e}"
@@ -153,10 +151,7 @@ class ClipboardMonitorThread(QThread):
                 self.status_update.emit(error_msg)
         except Exception:
             # 最後のエラーハンドリング
-            try:
-                win32clipboard.CloseClipboard()
-            except:
-                pass
+            pass
     
     def get_clipboard_image(self):
         """クリップボードから画像を取得する"""
@@ -171,57 +166,12 @@ class ClipboardMonitorThread(QThread):
                 self.status_update.emit(error_msg)
                 print(error_msg)
             
-            # win32clipboardを使用する方法を試す
-            win32clipboard.OpenClipboard()
-            
-            # クリップボードにビットマップがあるか確認
-            if win32clipboard.IsClipboardFormatAvailable(win32clipboard.CF_DIB):
-                # ビットマップデータを取得
-                data = win32clipboard.GetClipboardData(win32clipboard.CF_DIB)
-                win32clipboard.CloseClipboard()
-                
-                # ビットマップデータをPIL Imageに変換
-                try:
-                    # メモリストリームを作成
-                    stream = io.BytesIO()
-                    
-                    # BMP形式のヘッダーを追加
-                    bmp_header = bytes([
-                        0x42, 0x4D,           # 'BM' ヘッダー
-                        0x00, 0x00, 0x00, 0x00,  # ファイルサイズ (後で埋める)
-                        0x00, 0x00,           # 予約済み
-                        0x00, 0x00,           # 予約済み
-                        0x36, 0x00, 0x00, 0x00   # ピクセルデータまでのオフセット
-                    ])
-                    stream.write(bmp_header)
-                    
-                    # DIBデータを書き込む
-                    stream.write(data)
-                    
-                    # ストリームの先頭に戻る
-                    stream.seek(0)
-                    
-                    # PIL Imageとして開く
-                    img = Image.open(stream)
-                    return img
-                    
-                except Exception as e:
-                    error_msg = f"ビットマップ変換エラー: {e}"
-                    self.status_update.emit(error_msg)
-                    print(error_msg)
-                    return None
-            else:
-                win32clipboard.CloseClipboard()
-                return None
-                
+            # 画像が取得できなかった場合
+            return None
         except Exception as e:
             error_msg = f"クリップボード読み取りエラー: {e}"
             self.status_update.emit(error_msg)
             print(error_msg)
-            try:
-                win32clipboard.CloseClipboard()
-            except:
-                pass
             return None
 
 
@@ -322,6 +272,11 @@ class CustomTitleBar(QFrame):
         open_config_action = QAction("設定ファイルを開く", self)
         open_config_action.triggered.connect(lambda: self.parent.open_config_file())
         menu.addAction(open_config_action)
+        
+        # 翻訳結果をコピーするアクション
+        copy_translation_action = QAction("翻訳結果をコピー", self)
+        copy_translation_action.triggered.connect(lambda: self.parent.copy_translation_to_clipboard())
+        menu.addAction(copy_translation_action)
         
         # エクスポートアクション
         export_action = QAction("テキストをエクスポート", self)
@@ -691,17 +646,13 @@ class TranslatorWindow(QMainWindow):
     def clear_clipboard(self):
         """メインスレッドからクリップボードをクリアする"""
         try:
-            win32clipboard.OpenClipboard()
-            win32clipboard.EmptyClipboard()
-            win32clipboard.CloseClipboard()
+            # PyQtのクリップボードAPIを使用
+            clipboard = QApplication.clipboard()
+            clipboard.clear()
             print("メインスレッドからクリップボードをクリアしました")
         except Exception as e:
             print(f"メインスレッドからのクリップボードクリアエラー: {e}")
-            try:
-                win32clipboard.CloseClipboard()
-            except:
-                pass
-        
+            
     def process_image(self, img):
         """画像を処理してOCRと翻訳を実行"""
         if img is None:
@@ -1045,6 +996,19 @@ class TranslatorWindow(QMainWindow):
                 error_msg2 = f"代替スニッピングツール起動エラー: {e2}"
                 self.status_bar.showMessage(error_msg2)
                 print(error_msg2)
+                
+    def copy_translation_to_clipboard(self):
+        """翻訳結果をクリップボードにコピー"""
+        if 0 <= self.current_log_index < len(self.translation_logs):
+            log = self.translation_logs[self.current_log_index]
+            translated_text = log.get("translated_text", "")
+            
+            # PyQtのクリップボードAPIを使用
+            clipboard = QApplication.clipboard()
+            clipboard.setText(translated_text)
+            self.status_bar.showMessage("翻訳結果をクリップボードにコピーしました", 3000)
+        else:
+            self.status_bar.showMessage("翻訳結果がありません", 3000)
 
 
 def main():

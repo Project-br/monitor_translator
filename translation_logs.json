@@ -103,5 +103,10 @@
     "timestamp": "2025-04-14 10:06:59",
     "ocr_text": "Uncle Nelson\n\nYou won't be able to hire a dealer until one of their\nfriends has recommended you. Benji is friends with\nPeggy, Beth, and Ludwig. Focus on selling to them\nuntil one of them recommends you.",
     "translated_text": "あなたは彼らの友人があなたを推奨するまでディーラーを雇うことはできません. ベンジーはペギー、ベス、ルドヴィヒとの友人です. 彼らの1人があなたを推奨するまで彼らに売ることに焦点を当てます。"
+  },
+  {
+    "timestamp": "2025-04-14 10:10:13",
+    "ocr_text": "f @ <= self.current_log_index < len(self.translation_logs)\nlog = self.translation_logs[self.current_log_index]\nocr_text = log.get(“ocr_text™, \"\")\ntranslated_text = log.get(\"translated_text\", \"\")",
+    "translated_text": "f @ <= self.current_log_index < len(self.translation_logs) log = self.translation_logs[self.current_log_index] ocr_text = log.get(”ocr_textTM, “”) translated_text = log.get(”translated_text”, “”)"
   }
 ]
