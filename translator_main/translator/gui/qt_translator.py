@@ -173,7 +173,7 @@ class CustomTitleBar(QFrame):
     def __init__(self, parent=None, hotkey_text=""):
         super().__init__(parent)
         self.parent = parent
-        self.setFixedHeight(25)  # タイトルバーの高さを25pxに調整
+        self.setFixedHeight(22)  # タイトルバーの高さを25pxから22pxに縮小
         self.setStyleSheet("""
             CustomTitleBar {
                 background-color: rgba(44, 62, 80, 180);  /* 透明度を統一 */
@@ -369,6 +369,7 @@ class TranslatorWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         self.layout = QVBoxLayout(self.central_widget)
         self.layout.setContentsMargins(0, 0, 0, 0)  # 余白をなくす
+        self.layout.setSpacing(0)  # ウィジェット間のスペースをなくす
         
         # ホットキーテキストを取得
         hotkey_text = self.get_hotkey_text()
@@ -381,7 +382,7 @@ class TranslatorWindow(QMainWindow):
         self.content_widget = QWidget()
         self.content_widget.setObjectName("content_widget")  # IDを設定
         self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(10, 10, 10, 10)
+        self.content_layout.setContentsMargins(5, 0, 10, 5)  # 左マージンを10→5に、下部マージンを10→5に変更
         
         # テキスト表示エリア
         self.text_edit = QTextEdit()
@@ -408,10 +409,11 @@ class TranslatorWindow(QMainWindow):
         # ステータスバー
         self.status_bar = QStatusBar()
         self.status_bar.setObjectName("status_bar")  # IDを設定
+        self.status_bar.setFixedHeight(16)  # ステータスバーの高さを固定
         self.setStatusBar(self.status_bar)
         
         # ステータスバーのフォントサイズを小さく
-        status_font = QFont("Yu Gothic UI", 8)
+        status_font = QFont("Yu Gothic UI", 7)  # フォントサイズをさらに小さく
         self.status_bar.setFont(status_font)
         
         self.status_bar.showMessage("準備完了")
@@ -1084,10 +1086,14 @@ class TranslatorWindow(QMainWindow):
             QStatusBar {
                 background-color: transparent;  /* 完全に透明 */
                 color: rgba(255, 255, 255, 120);  /* テキストは少し透過 */
-                font-size: 8px;  /* 文字サイズを小さく */
+                font-size: 7px;  /* 文字サイズを小さく */
+                padding: 0;  /* パディングを削除 */
+                margin: 0;  /* マージンを削除 */
             }
             QStatusBar::item {
                 border: none;  /* 境界線を削除 */
+                padding: 0;  /* パディングを削除 */
+                margin: 0;  /* マージンを削除 */
             }
             QLabel {
                 color: #ffffff;
