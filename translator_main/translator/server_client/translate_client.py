@@ -45,27 +45,34 @@ class TranslateClient:
         if not text or text.strip() == "":
             return "翻訳するテキストが空です。"
         
+        # 改行を特殊なマーカーに置き換え（翻訳サーバーが改行を維持しない場合の対策）
+        NEWLINE_MARKER = "[NEWLINE_MARKER_XYZ]"
+        text_with_markers = text.replace("\n", NEWLINE_MARKER)
+        
         # パッケージ化されていて内部翻訳機能が利用可能な場合
         if is_packaged() and self.internal_translator:
             try:
-                result = self.internal_translator.translate(text)
-                return result
+                result = self.internal_translator.translate(text_with_markers)
+                # 翻訳結果の特殊マーカーを改行に戻す
+                return result.replace(NEWLINE_MARKER, "\n")
             except Exception as e:
                 print(f"内部翻訳処理でエラーが発生しました: {e}")
                 print("サーバー接続モードにフォールバックします")
-            
+        
         # リトライ処理を実装
         for attempt in range(self.max_retries):
             try:
                 print(f"翻訳サーバーに接続を試みています... (試行 {attempt + 1}/{self.max_retries})")
                 response = requests.post(
                     self.server_url, 
-                    json={"text": text}, 
+                    json={"text": text_with_markers}, 
                     timeout=30
                 )
                 response.raise_for_status()
                 result = response.json()
-                return result.get("result", "翻訳結果が取得できませんでした。")
+                translated_text = result.get("result", "翻訳結果が取得できませんでした。")
+                # 翻訳結果の特殊マーカーを改行に戻す
+                return translated_text.replace(NEWLINE_MARKER, "\n")
             except requests.Timeout:
                 print(f"リクエストがタイムアウトしました。再試行します... ({attempt + 1}/{self.max_retries})")
                 if attempt < self.max_retries - 1:
@@ -80,7 +87,7 @@ class TranslateClient:
                 if attempt < self.max_retries - 1:
                     print(f"再試行します... ({attempt + 1}/{self.max_retries})")
                     time.sleep(self.retry_delay)
-                
+            
         # すべての試行が失敗した場合
         return "翻訳サーバーに接続できませんでした。サーバーが起動しているか確認してください。"
 
