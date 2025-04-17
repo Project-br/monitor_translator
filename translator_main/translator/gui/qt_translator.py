@@ -943,10 +943,10 @@ class TranslatorWindow(QMainWindow):
             
             # HTMLフォーマットでテキストを作成
             result_html = f"""
-            <div style="color: {translation_color};">【翻訳結果】</div>
-            <div style="color: {translation_color}; font-weight: bold;">{translated_text_html}</div>
+            <div style="color: {translation_color}; text-shadow: 0px 0px 3px rgba(0,0,0,0.5);">【翻訳結果】</div>
+            <div style="color: {translation_color}; font-weight: bold; text-shadow: 0px 0px 3px rgba(0,0,0,0.7);">{translated_text_html}</div>
             <div style="margin: 10px;"></div>
-            <div style="color: {ocr_color};">{ocr_text_html}</div>
+            <div style="color: {ocr_color}; text-shadow: 0px 0px 2px rgba(0,0,0,0.5);">{ocr_text_html}</div>
             """
             
             self.text_edit.clear()
@@ -1085,15 +1085,18 @@ class TranslatorWindow(QMainWindow):
             /* ステータスバー設定 */
             QStatusBar {
                 background-color: transparent;  /* 完全に透明 */
-                color: rgba(255, 255, 255, 120);  /* テキストは少し透過 */
-                font-size: 7px;  /* 文字サイズを小さく */
-                padding: 0;  /* パディングを削除 */
+                color: #FFFFFF;  /* テキストは白色 */
+                font-size: 8px;  /* 文字サイズを少し大きく */
+                padding: 2px;  /* 少しパディングを追加 */
                 margin: 0;  /* マージンを削除 */
+                text-shadow: 0px 0px 2px rgba(0,0,0,0.7);  /* テキストに影を追加 */
             }
             QStatusBar::item {
                 border: none;  /* 境界線を削除 */
-                padding: 0;  /* パディングを削除 */
+                padding: 2px 5px;  /* パディングを追加 */
                 margin: 0;  /* マージンを削除 */
+                background-color: rgba(0, 0, 0, 0.5);  /* 黒い半透明の背景 */
+                border-radius: 3px;  /* 角を丸く */
             }
             QLabel {
                 color: #ffffff;
