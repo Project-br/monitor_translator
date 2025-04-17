@@ -35,6 +35,10 @@ SetupIconFile=translator_main\translator\resources\icon.ico
 ; インターフェース設定
 WizardStyle=modern
 
+; 署名設定 (証明書がある場合にコメントを外して使用)
+; SignTool=signtool sign /tr http://timestamp.digicert.com /td sha256 /fd sha256 /f "$f"
+; SignedUninstaller=yes
+
 [Languages]
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 

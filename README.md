@@ -1,4 +1,6 @@
-# 画面上の文章を簡易翻訳ツール
+# ENJAPP - 画面上の文章を簡易翻訳ツール
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Shift + Alt + Z キーを押しながら、マウスを移動させるだけで四角い範囲を指定して英語の文章を読み取り、ローカル翻訳サーバーによる日本語訳を出力します。<br>
 起動時に出現する小さいウィンドウ上で翻訳前の文章と翻訳後の文章が提示されるようになっています。
@@ -128,6 +130,8 @@ TESSERACT_PATH="C:\Program Files\Tesseract-OCR\tesseract.exe"
 USE_GPU = false
 # Translate Server Use NPU
 USE_NPU = false
+# Use Hugging Face model cache (true/false)
+USE_MODEL_CACHE = true
 ```
 
 ## トラブルシューティング
@@ -146,3 +150,12 @@ USE_NPU = false
 ## 貢献
 
 バグ報告や機能リクエストは、Issueを通じてお知らせください。プルリクエストも歓迎します。
+
+## 作者
+
+- [Borshchnabe](https://github.com/Borshchnabe)
+- [pikkuri](https://github.com/pikkuri)
+
+## ライセンス
+
+このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
