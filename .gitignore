@@ -33,6 +33,16 @@ translator_main/translator/server_client/model/
 .cache/
 .huggingface/
 
+# モデルファイル
+translator_main/translator/server_client/model/
+**/model/m2m100_418M/
+**/m2m100_418M/
+**/*.safetensors
+**/*.bin
+**/*.model
+**/*.json.lock
+**/*.pt
+
 # ビルド関連
 Output/
 old/
