@@ -23,8 +23,8 @@ Shift + Alt + Z キーを押しながら、マウスを移動させるだけで�
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/yourusername/monitor_translator.git
-cd monitor_translator
+git clone https://github.com/Borshchnabe/enjapp.git
+cd enjapp
 ```
 
 ### 2. 仮想環境の作成と有効化
@@ -90,6 +90,8 @@ GPUを使う場合は、USE_GPUにて True , 1, yes のいずれかを代入し�
 python app.py
 ```
 
+インストール版の場合は、スタートメニューから「ENJAPP」を選択して起動します。
+
 これにより、翻訳サーバーが別プロセスで起動され、その後にモニター翻訳ツールが起動します。<br>
 初回の起動時だけ、モデルのダウンロードが必要なので、少し待ってください。<br>
 ２回目以降はローカル上にモデルがあるのでそれを使う形になります。
@@ -99,21 +101,58 @@ python app.py
 1. 翻訳サーバーを起動:
 
 ```bash
-python -m monitor_translator.server_client.translate_server_run
+python -m translator_main.translator.server_client.translate_server_run
 ```
 
 2. 別のターミナルでモニター翻訳ツールを起動:
 
 ```bash
-python -m monitor_translator.translator
+python -m translator_main.translator.gui.qt_translator
+```
+
+または、サーバーモードで起動するには次のコマンドを使用します:
+
+```bash
+python app.py --server
 ```
 
 ### 操作方法
 
-1. プログラムが開始すると、「お手軽翻訳ツール」というウィンドウが表示されます。
-2. 英語が書かれている画面を表示します。
-3. Shift + Alt + Z キーを同時入力したタイミングのマウスの位置を始点として、離した瞬間のマウスの位置を終点とする対角線の四角形の範囲で文字をキャプチャします。
-4. 終了するには、「お手軽翻訳ツール」ウィンドウを閉じればいいです。或いは実行ターミナル上で Ctrl + c
+#### 基本操作
+
+1. ENJAPPを起動すると、小さな半透明のウィンドウが表示されます。
+2. 翻訳したいテキストが画面上に表示されている状態で、`Shift + Alt + X` キーを押してスニッピングモードを起動します。
+3. スニッピングモードでマウスをドラッグして翻訳したい領域を選択します。
+4. 選択が完了すると、選択した領域からテキストが抽出され、自動的に翻訳されます。
+5. 翻訳結果はENJAPPウィンドウに表示され、翻訳結果と元のテキストの両方を確認できます。
+
+#### ウィンドウ操作
+
+- **ウィンドウの移動**: ウィンドウの上部をドラッグして好きな位置に移動できます。
+- **常に最前面に表示**: デフォルトではウィンドウが常に最前面に表示されます。この設定はコンテキストメニューから変更できます。
+- **サイズ変更**: ウィンドウの端をドラッグしてサイズを変更できます。設定は自動的に保存されます。
+
+#### コンテキストメニュー
+
+ENJAPPウィンドウ上で右クリックすると、以下のオプションを含むコンテキストメニューが表示されます：
+
+- **常に最前面に表示**: ウィンドウを常に最前面に表示するかどうかを切り替えます。
+- **ハイライト表示**: デフォルトでは完全に透明な表示ですが、見づらい場合はハイライト表示に切り替えて見やすくできます。
+- **半透明度**: ウィンドウの半透明度を調整します。
+- **フォントサイズ**: 表示されるテキストのフォントサイズを調整します。
+- **終了**: ENJAPPを終了します。
+
+#### キーボードショートカット
+
+- `Shift + Alt + X`: スニッピングモードを起動して翻訳したい領域を選択
+- `Esc`: スニッピングモードをキャンセル
+
+#### 終了方法
+
+以下のいずれかの方法でENJAPPを終了できます：
+
+1. ウィンドウ右上の閉じるボタンをクリック
+2. ウィンドウ上で右クリックして表示されるコンテキストメニューから「終了」を選択
 
 ## 環境設定
 
@@ -123,16 +162,21 @@ python -m monitor_translator.translator
 # Default language settings
 DEFAULT_OCR_LANGUAGE="jpn+eng"
 DEFAULT_TARGET_LANGUAGE="en-US"
+
 # Path settings
 # Windows default path for Tesseract
 TESSERACT_PATH="C:\Program Files\Tesseract-OCR\tesseract.exe"
-# Translate Server Use GPU
+
+# Translation settings
+# Translate Server Use GPU (true/false)
 USE_GPU = false
-# Translate Server Use NPU
+# Translate Server Use NPU (true/false)
 USE_NPU = false
 # Use Hugging Face model cache (true/false)
 USE_MODEL_CACHE = true
 ```
+
+`USE_MODEL_CACHE`環境変数を`false`に設定すると、Hugging Faceのモデルキャッシュ機能が無効化され、毎回モデルをダウンロードします。デフォルトでは`true`に設定されており、モデルはローカルにキャッシュされます。
 
 ## トラブルシューティング
 
