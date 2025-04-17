@@ -272,6 +272,11 @@ class CustomTitleBar(QFrame):
         open_config_action.triggered.connect(lambda: self.parent.open_config_file())
         menu.addAction(open_config_action)
         
+        # 変更履歴を表示するアクション
+        open_changelog_action = QAction("変更履歴を表示", self)
+        open_changelog_action.triggered.connect(lambda: self.parent.open_changelog())
+        menu.addAction(open_changelog_action)
+        
         # 翻訳結果をコピーするアクション
         copy_translation_action = QAction("翻訳結果をコピー", self)
         copy_translation_action.triggered.connect(lambda: self.parent.copy_translation_to_clipboard())
@@ -1030,6 +1035,18 @@ class TranslatorWindow(QMainWindow):
             self.status_bar.showMessage("設定ファイルを開きました", 3000)
         else:
             self.status_bar.showMessage("設定ファイルが見つかりません", 3000)
+            
+    def open_changelog(self):
+        """変更履歴を開く"""
+        changelog_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 
+            "CHANGELOG.md"
+        )
+        if os.path.exists(changelog_path):
+            os.startfile(changelog_path)
+            self.status_bar.showMessage("変更履歴を開きました", 3000)
+        else:
+            self.status_bar.showMessage("変更履歴ファイルが見つかりません", 3000)
             
     def apply_dark_theme(self):
         """ダークテーマを適用"""

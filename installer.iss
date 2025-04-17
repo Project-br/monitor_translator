@@ -2,7 +2,7 @@
 ; Inno Setup用
 
 #define MyAppName "ENJAPP"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.0.1"
 #define MyAppPublisher "Your Company Name"
 #define MyAppURL "https://yourcompany.com/"
 #define MyAppExeName "ENJAPP.exe"
@@ -48,6 +48,8 @@ Source: "dist\ENJAPP\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs c
 
 ; 設定ファイル
 Source: "config.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+; 変更履歴ファイル
+Source: "CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 ; ログファイルは含めない（初回実行時に自動生成される）
 
 ; Tesseract-OCRのインストールチェック用スクリプト
