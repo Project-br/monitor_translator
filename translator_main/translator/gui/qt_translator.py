@@ -7,8 +7,11 @@ PyQt5ベースの翻訳ツールGUI
 このモジュールは翻訳ツールのGUIをPyQt5で実装します。
 """
 
-import sys
+# Qtの警告メッセージを抑制するための設定
 import os
+os.environ["QT_LOGGING_RULES"] = "*.debug=false;qt.qpa.xcb=false;*.warning=false"
+
+import sys
 import threading
 import time
 import subprocess
@@ -948,10 +951,10 @@ class TranslatorWindow(QMainWindow):
             
             # HTMLフォーマットでテキストを作成
             result_html = f"""
-            <div style="color: {translation_color}; text-shadow: 0px 0px 3px rgba(0,0,0,0.5);">【翻訳結果】</div>
-            <div style="color: {translation_color}; font-weight: bold; text-shadow: 0px 0px 3px rgba(0,0,0,0.7);">{translated_text_html}</div>
+            <div style="color: {translation_color};">【翻訳結果】</div>
+            <div style="color: {translation_color}; font-weight: bold;">{translated_text_html}</div>
             <div style="margin: 10px;"></div>
-            <div style="color: {ocr_color}; text-shadow: 0px 0px 2px rgba(0,0,0,0.5);">{ocr_text_html}</div>
+            <div style="color: {ocr_color};">{ocr_text_html}</div>
             """
             
             self.text_edit.clear()
@@ -1106,7 +1109,7 @@ class TranslatorWindow(QMainWindow):
                 font-size: 8px;  /* 文字サイズを少し大きく */
                 padding: 2px;  /* 少しパディングを追加 */
                 margin: 0;  /* マージンを削除 */
-                text-shadow: 0px 0px 2px rgba(0,0,0,0.7);  /* テキストに影を追加 */
+                /* 完全透明スタイル */
             }
             QStatusBar::item {
                 border: none;  /* 境界線を削除 */

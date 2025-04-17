@@ -1,0 +1,105 @@
+[MASTER]
+# Python 3.8以上を対象
+py-version = 3.8
+
+# 並列実行を有効にする
+jobs = 0
+
+# 再帰的にサブディレクトリを探索
+recursive = yes
+
+# 解析から除外するディレクトリとファイル
+ignore = CVS, .git, .github, .venv, venv, __pycache__, build, dist, old
+
+# 無視するファイル拡張子
+ignore-patterns = *.pyc, *.pyo, *.pyd, .DS_Store
+
+# 最大行長
+max-line-length = 100
+
+# docstringのスタイル
+docstring-style = google
+
+[MESSAGES CONTROL]
+# 無効にするメッセージ
+disable = 
+    C0111, # missing-docstring
+    C0103, # invalid-name
+    C0303, # trailing-whitespace
+    W0511, # fixme
+    R0903, # too-few-public-methods
+    R0913, # too-many-arguments
+    R0914, # too-many-locals
+    W0703, # broad-except
+    W1203, # logging-fstring-interpolation
+
+[BASIC]
+# 変数名の最小長
+variable-rgx = [a-z_][a-z0-9_]{0,30}$
+
+# 関数名の命名規則
+function-rgx = [a-z_][a-z0-9_]{0,30}$
+
+# メソッド名の命名規則
+method-rgx = [a-z_][a-z0-9_]{0,30}$
+
+# クラス名の命名規則
+class-rgx = [A-Z_][a-zA-Z0-9_]+$
+
+# モジュール名の命名規則
+module-rgx = (([a-z_][a-z0-9_]*)|([A-Z][a-zA-Z0-9]+))$
+
+[FORMAT]
+# インデントにスペースを使用
+indent-string = '    '
+
+[SIMILARITIES]
+# 重複コードの最小行数
+min-similarity-lines = 8
+
+# 重複チェックから除外する行の正規表現
+ignore-comments = yes
+ignore-docstrings = yes
+ignore-imports = yes
+
+[TYPECHECK]
+# 型チェックで無視するモジュール
+ignored-modules = numpy, torch, PyQt5, PySide2
+
+[LOGGING]
+# ロギングフォーマット文字列の検証
+logging-format-style = new
+
+[DESIGN]
+# 最大引数数
+max-args = 10
+
+# 最大属性数
+max-attributes = 15
+
+# 最大ローカル変数数
+max-locals = 20
+
+# 最大リターン数
+max-returns = 8
+
+# 最大分岐数
+max-branches = 15
+
+# 最大ステートメント数
+max-statements = 50
+
+# 最大親クラス数
+max-parents = 7
+
+# 最大継承の深さ
+max-inheritance-depth = 5
+
+# 最大メソッド数
+max-methods = 30
+
+# 最大パブリックメソッド数
+max-public-methods = 25
+
+# 最大ブール式の複雑さ
+max-bool-expr = 5

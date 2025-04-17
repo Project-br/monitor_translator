@@ -2,10 +2,16 @@
 # -*- coding: utf-8 -*-
 
 """
-翻訳ツール起動スクリプト
+ENJAPP 翻訳ツール起動スクリプト
 
 このスクリプトは翻訳サーバーを別プロセスで起動し、
 その後にモニター翻訳ツールを起動します。
+
+主な機能:
+- 翻訳サーバーの起動と管理
+- モニター翻訳ツールの起動
+- コマンドライン引数による動作切り替え
+- アプリケーション終了時のリソースクリーンアップ
 """
 
 import os
@@ -16,6 +22,18 @@ import signal
 import atexit
 import platform
 import requests
+import logging
+
+# ロギングの設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('app.log', encoding='utf-8')
+    ]
+)
+logger = logging.getLogger('enjapp')
 
 # グローバル変数として翻訳サーバープロセスを保持
 server_process = None
@@ -45,24 +63,32 @@ def get_python_executable():
 def cleanup_server():
     """
     翻訳サーバープロセスをクリーンアップする関数
+    
+    アプリケーション終了時に、翻訳サーバープロセスを適切に終了させます。
+    WindowsとUnix系 OSの両方に対応しています。
+    
+    Returns:
+        None
     """
     global server_process
     if server_process:
-        print("翻訳サーバーを終了しています...")
+        logger.info("翻訳サーバーを終了しています...")
         try:
             if platform.system() == 'Windows':
-                # Windowsの場合はTASKKILLを使用
+                # Windowsの場合はTASKKILLを使用してプロセスを強制終了
                 subprocess.run(['taskkill', '/F', '/T', '/PID', str(server_process.pid)], 
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                logger.debug(f"Windowsプロセス終了: PID {server_process.pid}")
             else:
-                # Unix系の場合はシグナルを送信
+                # Unix系の場合はシグナルを送信して正常終了を促す
                 os.killpg(os.getpgid(server_process.pid), signal.SIGTERM)
                 server_process.wait(timeout=5)  # 最大5秒待機
+                logger.debug(f"Unixプロセス終了: PID {server_process.pid}")
         except Exception as e:
-            print(f"サーバー終了中にエラーが発生しました: {e}")
+            logger.error(f"サーバー終了中にエラーが発生しました: {e}")
         finally:
             server_process = None
-            print("翻訳サーバーを終了しました")
+            logger.info("翻訳サーバーを終了しました")
 
 def start_translation_server():
     """
@@ -276,54 +302,75 @@ def start_monitor_translator():
 def main():
     """
     メイン実行関数
+    
+    コマンドライン引数を解析し、アプリケーションの動作モードを決定します。
+    主に以下の2つのモードがあります：
+    1. サーバーモード（--serverオプションまたはENJAPP_SERVER_MODE環境変数で指定）
+    2. 通常モード（デフォルト）
+    
+    Returns:
+        None
     """
     # コマンドライン引数を解析
     import argparse
     parser = argparse.ArgumentParser(description='ENJAPP 翻訳ツール')
     parser.add_argument('--server', action='store_true', help='サーバーモードで起動')
+    parser.add_argument('--debug', action='store_true', help='デバッグモードで起動（詳細なログ出力）')
     args = parser.parse_args()
+    
+    # デバッグモードの設定
+    if args.debug:
+        logging.getLogger('enjapp').setLevel(logging.DEBUG)
+        logger.debug("デバッグモードが有効化されました")
     
     # サーバーモードで起動する場合
     if args.server or os.environ.get('ENJAPP_SERVER_MODE') == '1':
-        print("サーバーモードで起動します...")
+        logger.info("サーバーモードで起動します...")
         try:
             from translator_main.translator.server_client.translate_server_run import start_server
+            logger.debug("翻訳サーバーモジュールのインポートに成功しました")
             start_server()
         except ImportError as e:
-            print(f"サーバーモジュールのインポートに失敗しました: {e}")
+            logger.error(f"サーバーモジュールのインポートに失敗しました: {e}")
             # パッケージ化されている場合のパスを調整
             if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
                 base_dir = sys._MEIPASS
+                logger.debug(f"パッケージ化された環境を検出しました。パスを調整します: {base_dir}")
                 sys.path.append(base_dir)
                 try:
                     from translator_main.translator.server_client.translate_server_run import start_server
+                    logger.debug("パス調整後に翻訳サーバーモジュールのインポートに成功しました")
                     start_server()
                 except ImportError as e2:
-                    print(f"調整後もサーバーモジュールのインポートに失敗しました: {e2}")
+                    logger.critical(f"調整後もサーバーモジュールのインポートに失敗しました: {e2}")
                     sys.exit(1)
             else:
+                logger.critical("サーバーモジュールが見つかりません")
                 sys.exit(1)
         except Exception as e:
-            print(f"サーバー起動中に予期しないエラーが発生しました: {e}")
+            logger.critical(f"サーバー起動中に予期しないエラーが発生しました: {e}")
+            import traceback
+            logger.debug(traceback.format_exc())
             sys.exit(1)
         return
     
     try:
-        # 先にGUIを起動し、GUIからサーバーを起動するように変更
-        print("モニター翻訳ツールを起動します...")
+        # 通常モードの起動処理
+        logger.info("モニター翻訳ツールを起動します...")
         
         # モニター翻訳ツールを起動（サーバー起動情報を渡す）
         exit_code = start_monitor_translator()
+        logger.debug(f"モニター翻訳ツールが終了しました。終了コード: {exit_code}")
         
         # 翻訳モニターの終了コードを返す
         sys.exit(exit_code)
         
     except KeyboardInterrupt:
-        print("\nプログラムが中断されました")
+        logger.info("\nプログラムがユーザーによって中断されました")
     except Exception as e:
-        print(f"エラーが発生しました: {e}")
+        logger.error(f"アプリケーション実行中にエラーが発生しました: {e}")
         import traceback
-        traceback.print_exc()
+        logger.debug(traceback.format_exc())
         sys.exit(1)
     finally:
         # 明示的にサーバープロセスをクリーンアップ

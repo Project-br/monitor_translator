@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+翻訳サーバーモジュール
+
+このモジュールは、M2M100モデルを使用して翻訳サービスを提供するFastAPIサーバーを実装します。
+翻訳クライアントからのリクエストを受け付け、テキストの翻訳を行います。
+
+主な機能:
+- 翻訳モデルのロードと管理
+- RESTful APIによる翻訳エンドポイントの提供
+- 環境変数による設定（GPU使用、モデルキャッシュなど）
+- 自動的なモデルダウンロードとキャッシュ
+"""
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import torch
@@ -9,6 +25,12 @@ from dotenv import load_dotenv
 
 # PyInstallerでパッケージ化されているかどうかを確認する関数
 def is_packaged():
+    """
+    アプリケーションがPyInstallerでパッケージ化されているかどうかを確認します。
+    
+    Returns:
+        bool: パッケージ化されている場合はTrue、そうでない場合はFalse
+    """
     return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 # .envファイルから環境変数を読み込む
@@ -35,6 +57,12 @@ use_gpu = os.environ.get('USE_GPU', 'False').lower() in ('true', '1', 'yes')
 app = FastAPI()
 
 class InferenceRequest(BaseModel):
+    """
+    翻訳リクエストのデータモデル
+    
+    Attributes:
+        text (str): 翻訳対象のテキスト
+    """
     text: str
 
 # モデルとトークナイザーのディレクトリパス
@@ -109,6 +137,18 @@ else:
 
 @app.post("/translate")
 async def translate(request_data: InferenceRequest):
+    """
+    テキスト翻訳エンドポイント
+    
+    英語から日本語への翻訳を行います。M2M100モデルを使用して翻訳を実行し、
+    結果をJSON形式で返します。
+    
+    Args:
+        request_data (InferenceRequest): 翻訳リクエストデータ
+        
+    Returns:
+        dict: 翻訳結果または発生したエラーを含む辞書
+    """
     input_text = request_data.text
     # ソース言語を英語に設定（必要に応じて変更）
     tokenizer.src_lang = "en"
@@ -118,27 +158,37 @@ async def translate(request_data: InferenceRequest):
     if use_gpu:
         inputs = {k: v.to(device) for k, v in inputs.items()}
     
+    # 翻訳の設定
     generation_config = GenerationConfig(
-        max_length=200,
-        early_stopping=True,
-        num_beams=5
+        max_length=200,  # 最大出力長
+        early_stopping=True,  # 早期終了
+        num_beams=5  # ビームサーチのビーム数
     )
 
     try:
+        # 翻訳の実行
         generated_tokens = model.generate(
             **inputs,
-            forced_bos_token_id=tokenizer.get_lang_id("ja"),
+            forced_bos_token_id=tokenizer.get_lang_id("ja"),  # 強制的に日本語で出力
             generation_config=generation_config
         )
+        # トークンをテキストにデコード
         translated_text = tokenizer.batch_decode(generated_tokens, skip_special_tokens=True)[0]
         return {"result": translated_text}
     except Exception as e:
+        print(f"翻訳処理中にエラーが発生しました: {e}")
         return {"error": str(e)}
 
 def start_server():
     """
     翻訳サーバーを起動する関数
-    app.pyから呼び出されるエントリーポイント
+    
+    app.pyから呼び出されるエントリーポイントです。
+    FastAPIアプリケーションをUvicornサーバーで起動し、
+    ローカルホスト上でポート11451でリッスンします。
+    
+    Returns:
+        None
     """
     print("翻訳サーバーを起動します...")
     uvicorn.run(app, host="127.0.0.1", port=11451)

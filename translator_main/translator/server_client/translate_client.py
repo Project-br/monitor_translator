@@ -1,3 +1,19 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+翻訳クライアントモジュール
+
+このモジュールは、翻訳サーバーと通信してテキストの翻訳を行うクライアントを実装します。
+サーバーが利用できない場合のフォールバックメカニズムも提供します。
+
+主な機能:
+- 翻訳サーバーへのHTTPリクエスト
+- リトライ機能
+- 内部翻訳機能（パッケージ化されている場合）
+- 改行の維持機能
+"""
+
 import requests
 import json
 import time
@@ -6,14 +22,33 @@ import os
 
 # PyInstallerでパッケージ化されているかどうかを確認する関数
 def is_packaged():
+    """
+    アプリケーションがPyInstallerでパッケージ化されているかどうかを確認します。
+    
+    Returns:
+        bool: パッケージ化されている場合はTrue、そうでない場合はFalse
+    """
     return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
 class TranslateClient:
+    """
+    翻訳クライアントクラス
+    
+    翻訳サーバーと通信してテキストの翻訳を行います。サーバーが利用できない場合は、
+    内部翻訳機能（パッケージ化されている場合）にフォールバックします。
+    
+    Attributes:
+        server_url (str): 翻訳サーバーのURL
+        max_retries (int): 接続試行回数
+        retry_delay (int): 再試行の間隔（秒）
+        internal_translator (TranslatorModel, optional): 内部翻訳モデルのインスタンス
+    """
     def __init__(self, server_url: str = "http://127.0.0.1:11451/translate"):
         """
         TranslateClient クラスの初期化
 
-        :param server_url: 翻訳サーバーのURL
+        Args:
+            server_url (str, optional): 翻訳サーバーのURL。デフォルトは"http://127.0.0.1:11451/translate"
         """
         self.server_url = server_url
         self.max_retries = 3
@@ -37,10 +72,18 @@ class TranslateClient:
 
     def translate(self, text: str) -> str:
         """
-        同期的に翻訳リクエストを送信し、結果を取得する
+        同期的に翻訳リクエストを送信し、結果を取得します。
 
-        :param text: 翻訳したいテキスト
-        :return: 翻訳結果の文字列
+        翻訳処理は以下の優先順で行われます：
+        1. パッケージ化されていて内部翻訳機能が利用可能な場合は、それを使用
+        2. 内部翻訳機能が利用できない場合は、翻訳サーバーに接続して翻訳を行う
+        3. 接続に失敗した場合は、指定された回数まで再試行
+
+        Args:
+            text (str): 翻訳したいテキスト
+
+        Returns:
+            str: 翻訳結果の文字列。翻訳に失敗した場合はエラーメッセージ
         """
         if not text or text.strip() == "":
             return "翻訳するテキストが空です。"
@@ -93,6 +136,14 @@ class TranslateClient:
 
 # TranslateClient クラスの使用例
 def main():
+    """
+    TranslateClientクラスの使用例を示すメイン関数
+    
+    サンプルテキストを翻訳し、結果を表示します。
+    
+    Returns:
+        None
+    """
     client = TranslateClient()
     text_to_translate = "Now I'll translate all the comments in the translator.py file from English to Japanese. I'll create a comprehensive edit that changes all the comments while preserving the code functionality."
     translated_text = client.translate(text_to_translate)
