@@ -23,7 +23,7 @@ Shift + Alt + Z キーを押しながら、マウスを移動させるだけで�
 ### 1. リポジトリのクローン
 
 ```bash
-git clone https://github.com/Borshchnabe/enjapp.git
+git clone https://github.com/Project-br/monitor_translator.git
 cd enjapp
 ```
 
