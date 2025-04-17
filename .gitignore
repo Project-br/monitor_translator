@@ -29,6 +29,16 @@ translator_main/translator/server_client/__pycache__/
 translator_main/translator/server_client/cache/
 translator_main/translator/server_client/model/
 
+# Hugging Faceモデルキャッシュ
+.cache/
+.huggingface/
+
+# ビルド関連
+Output/
+old/
+*.spec
+!enjapp_fixed.spec
+
 # 仮想環境
 venv/
 ENV/
