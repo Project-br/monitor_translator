@@ -54,16 +54,28 @@ except Exception as e:
 
 # モデルとトークナイザーのロード
 try:
+    # ディレクトリが存在しない場合は作成
     if not os.path.exists(model_dir):
         print(f"モデルディレクトリが存在しないため、新規作成します: {model_dir}")
         os.makedirs(model_dir, exist_ok=True)
+    
+    # 必要なモデルファイルの存在を確認
+    model_file = os.path.join(model_dir, "model.safetensors")
+    tokenizer_file = os.path.join(model_dir, "tokenizer_config.json")
+    
+    if not os.path.exists(model_file) or not os.path.exists(tokenizer_file):
+        print(f"必要なモデルファイルが存在しないため、ダウンロードします: {model_dir}")
         print("モデルをダウンロードしています...")
         print("これには数分かかる場合があります。しばらくお待ちください...")
         # 進捗表示を追加
         print("ダウンロード中: トークナイザー")
-        tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M")
+        # キャッシュを使用するかどうかの設定
+        use_cache = os.environ.get('USE_MODEL_CACHE', 'True').lower() in ('true', '1', 'yes')
+        print(f"モデルキャッシュの使用: {use_cache}")
+        
+        tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M", use_auth_token=False, cache_dir=None if use_cache else "no_cache")
         print("ダウンロード中: 翻訳モデル")
-        model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M")
+        model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M", use_auth_token=False, cache_dir=None if use_cache else "no_cache")
         print("モデルを保存しています...")
         tokenizer.save_pretrained(model_dir)
         model.save_pretrained(model_dir)
@@ -77,8 +89,12 @@ except Exception as e:
     # フォールバック: オンラインからモデルをロード
     try:
         print("オンラインからモデルをロードします...")
-        tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M")
-        model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M")
+        # キャッシュを使用するかどうかの設定
+        use_cache = os.environ.get('USE_MODEL_CACHE', 'True').lower() in ('true', '1', 'yes')
+        print(f"モデルキャッシュの使用: {use_cache}")
+        
+        tokenizer = M2M100Tokenizer.from_pretrained("facebook/m2m100_418M", use_auth_token=False, cache_dir=None if use_cache else "no_cache")
+        model = M2M100ForConditionalGeneration.from_pretrained("facebook/m2m100_418M", use_auth_token=False, cache_dir=None if use_cache else "no_cache")
     except Exception as e2:
         print(f"オンラインからのモデルロードにも失敗しました: {e2}")
         raise

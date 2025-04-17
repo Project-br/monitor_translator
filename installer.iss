@@ -69,10 +69,49 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 Filename: "{app}\check_tesseract.bat"; Description: "Tesseract-OCRの確認"; Flags: runhidden
 
 [Code]
-// インストール前の確認
+// 既存のインストールを検出して自動的にアンインストールする
 function InitializeSetup(): Boolean;
+var
+  UninstallString: String;
+  ResultCode: Integer;
+  UninstallSuccessful: Boolean;
 begin
+  // デフォルトでは続行
   Result := True;
+  
+  // レジストリから既存のアンインストーラ情報を取得
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{#SetupSetting("AppId")}_is1',
+     'UninstallString', UninstallString) then
+  begin
+    // 既存のインストールが見つかった場合、ユーザーに確認
+    if MsgBox('{#MyAppName}の以前のバージョンが見つかりました。' + #13#10 +
+              'インストールを続行する前に、既存のバージョンをアンインストールする必要があります。' + #13#10 + #13#10 +
+              '既存のバージョンをアンインストールしますか？',
+              mbConfirmation, MB_YESNO) = IDYES then
+    begin
+      // アンインストーラに /SILENT パラメータを追加して、サイレントモードで実行
+      UninstallString := RemoveQuotes(UninstallString);
+      UninstallSuccessful := Exec(UninstallString, '/SILENT', '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+      
+      // アンインストールが成功したかどうかを確認
+      if not UninstallSuccessful then
+      begin
+        MsgBox('既存のバージョンのアンインストールに失敗しました。' + #13#10 +
+               'インストールを続行できません。', mbError, MB_OK);
+        Result := False;
+      end
+      else
+      begin
+        // アンインストール後、少し待機してファイルの削除が完了するのを待つ
+        Sleep(1000);
+      end;
+    end
+    else
+    begin
+      // ユーザーがアンインストールをキャンセルした場合
+      Result := False;
+    end;
+  end;
 end;
 
 // Tesseract-OCRのインストール確認
