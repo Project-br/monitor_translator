@@ -1,4 +1,7 @@
 # ENJAPP - 画面上の文章を簡易翻訳ツール
+本ツールは、海外ゲームをプレイする際に画面上の英語テキストを
+リアルタイムで読み取り、日本語に翻訳することを目的として
+個人利用向けに作成した簡易翻訳ツールです。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
