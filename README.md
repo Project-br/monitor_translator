@@ -1,9 +1,9 @@
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 # ENJAPP - 画面上の文章を簡易翻訳ツール
 本ツールは、海外ゲームをプレイする際に画面上の英語テキストを
 リアルタイムで読み取り、日本語に翻訳することを目的として
 個人利用向けに作成した簡易翻訳ツールです。
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 Shift + Alt + Z キーを押しながら、マウスを移動させるだけで四角い範囲を指定して英語の文章を読み取り、ローカル翻訳サーバーによる日本語訳を出力します。<br>
 起動時に出現する小さいウィンドウ上で翻訳前の文章と翻訳後の文章が提示されるようになっています。
