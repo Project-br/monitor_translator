@@ -17,8 +17,8 @@
     "path": "C:\\Program Files\\Tesseract-OCR\\tesseract.exe"
   },
   "ui": {
-    "window_width": 352,
-    "window_height": 155,
+    "window_width": 368,
+    "window_height": 244,
     "always_on_top": true,
     "text": {
       "font_family": "Yu Gothic UI",
